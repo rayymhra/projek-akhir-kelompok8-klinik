@@ -12,6 +12,10 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\QueueController;
 
+Route::patch('/visits/{visit}/update-status', [VisitController::class, 'updateStatus'])
+    ->name('visits.updateStatus')
+    ->middleware('auth');
+
 // Authentication Routes
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);

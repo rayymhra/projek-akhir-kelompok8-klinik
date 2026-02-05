@@ -54,13 +54,31 @@ class VisitController extends Controller
 
     public function updateStatus(Request $request, Visit $visit)
     {
+        // Validate the status
         $request->validate([
             'status' => 'required|in:menunggu,diperiksa,selesai'
         ]);
         
-        $visit->update(['status' => $request->status]);
+        // Update the status
+        $visit->update([
+            'status' => $request->status,
+            'status_updated_at' => now() // optional: add this to your migration
+        ]);
         
-        return back()->with('success', 'Status kunjungan berhasil diperbarui.');
+        // If status changed to 'selesai' and user is a doctor, redirect to medical record
+        if ($request->status == 'selesai' && auth()->user()->role == 'dokter') {
+            return redirect()->route('medical-records.create', $visit)
+                ->with('success', 'Status kunjungan diubah ke selesai. Silakan input pemeriksaan.');
+        }
+        
+        // For other status changes, show success message
+        $statusMessages = [
+            'menunggu' => 'Kunjungan ditandai sebagai menunggu.',
+            'diperiksa' => 'Kunjungan ditandai sebagai sedang diperiksa.',
+            'selesai' => 'Kunjungan ditandai sebagai selesai.'
+        ];
+        
+        return back()->with('success', $statusMessages[$request->status]);
     }
 
     public function antrian()

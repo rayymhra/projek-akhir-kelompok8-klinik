@@ -140,72 +140,137 @@
                                         {{ ucfirst($visit->status) }}
                                     </span>
                                 </td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <a href="{{ route('patients.show', $visit->patient) }}" 
-                                           class="btn btn-sm btn-info" title="Detail Pasien">
-                                            <i class="fas fa-user"></i>
-                                        </a>
-                                        
-                                        @if(auth()->user()->role == 'dokter' && $visit->status == 'menunggu')
-                                        <a href="{{ route('medical-records.create', $visit) }}" 
-                                           class="btn btn-sm btn-success" title="Input Pemeriksaan">
-                                            <i class="fas fa-stethoscope"></i>
-                                        </a>
-                                        @endif
-                                        
-                                        @if(auth()->user()->role == 'petugas')
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-warning dropdown-toggle" 
-                                                    type="button" data-bs-toggle="dropdown">
-                                                <i class="fas fa-cog"></i>
-                                            </button>
-                                            <ul class="dropdown-menu">
-                                                <li>
-                                                    <form action="{{ route('visits.updateStatus', $visit) }}" 
-                                                          method="POST" class="d-inline">
-                                                        @csrf
-                                                        @method('PATCH')
-                                                        <input type="hidden" name="status" value="menunggu">
-                                                        <button type="submit" class="dropdown-item">
-                                                            Set Menunggu
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                                <li>
-                                                    <form action="{{ route('visits.updateStatus', $visit) }}" 
-                                                          method="POST" class="d-inline">
-                                                        @csrf
-                                                        @method('PATCH')
-                                                        <input type="hidden" name="status" value="diperiksa">
-                                                        <button type="submit" class="dropdown-item">
-                                                            Set Diperiksa
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                                <li>
-                                                    <form action="{{ route('visits.updateStatus', $visit) }}" 
-                                                          method="POST" class="d-inline">
-                                                        @csrf
-                                                        @method('PATCH')
-                                                        <input type="hidden" name="status" value="selesai">
-                                                        <button type="submit" class="dropdown-item">
-                                                            Set Selesai
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                        @endif
-                                        
-                                        @if($visit->status == 'selesai' && !$visit->transaction)
-                                        <a href="{{ route('transactions.create', ['visit' => $visit->id]) }}" 
-                                           class="btn btn-sm btn-primary" title="Buat Transaksi">
-                                            <i class="fas fa-cash-register"></i>
-                                        </a>
-                                        @endif
-                                    </div>
-                                </td>
+                                <!-- Replace the entire td cell for actions with this: -->
+<td>
+    <div class="btn-group" role="group">
+        <a href="{{ route('patients.show', $visit->patient) }}" 
+           class="btn btn-sm btn-info" title="Detail Pasien">
+            <i class="fas fa-user"></i>
+        </a>
+        
+        <!-- Quick Status Buttons (visible to admin/petugas) -->
+        @if(in_array(auth()->user()->role, ['admin', 'petugas', 'dokter']))
+            <div class="btn-group" role="group">
+                <!-- Menunggu Button -->
+                @if($visit->status != 'menunggu')
+                <form action="{{ route('visits.updateStatus', $visit) }}" 
+                      method="POST" class="d-inline">
+                    @csrf
+                    @method('PATCH')
+                    <input type="hidden" name="status" value="menunggu">
+                    <button type="submit" class="btn btn-sm btn-warning" 
+                            title="Set ke Menunggu"
+                            @if($visit->status == 'menunggu') disabled @endif>
+                        <i class="fas fa-clock"></i>
+                    </button>
+                </form>
+                @endif
+                
+                <!-- Diperiksa Button -->
+                @if($visit->status != 'diperiksa')
+                <form action="{{ route('visits.updateStatus', $visit) }}" 
+                      method="POST" class="d-inline">
+                    @csrf
+                    @method('PATCH')
+                    <input type="hidden" name="status" value="diperiksa">
+                    <button type="submit" class="btn btn-sm btn-info" 
+                            title="Set ke Diperiksa"
+                            @if($visit->status == 'diperiksa') disabled @endif>
+                        <i class="fas fa-user-md"></i>
+                    </button>
+                </form>
+                @endif
+                
+                <!-- Selesai Button -->
+                @if($visit->status != 'selesai')
+                <form action="{{ route('visits.updateStatus', $visit) }}" 
+                      method="POST" class="d-inline">
+                    @csrf
+                    @method('PATCH')
+                    <input type="hidden" name="status" value="selesai">
+                    <button type="submit" class="btn btn-sm btn-success" 
+                            title="Set ke Selesai"
+                            @if($visit->status == 'selesai') disabled @endif>
+                        <i class="fas fa-check-circle"></i>
+                    </button>
+                </form>
+                @endif
+            </div>
+        @endif
+        
+        <!-- Doctor Actions -->
+        @if(auth()->user()->role == 'dokter' && $visit->status == 'menunggu')
+        <a href="{{ route('medical-records.create', $visit) }}" 
+           class="btn btn-sm btn-primary" title="Mulai Pemeriksaan">
+            <i class="fas fa-stethoscope"></i>
+        </a>
+        @endif
+        
+        <!-- Transaction Button -->
+        @if($visit->status == 'selesai' && !$visit->transaction)
+        <a href="{{ route('transactions.create', ['visit' => $visit->id]) }}" 
+           class="btn btn-sm btn-secondary" title="Buat Transaksi">
+            <i class="fas fa-cash-register"></i>
+        </a>
+        @endif
+        
+        <!-- Optional: Dropdown for mobile view -->
+        <div class="dropdown d-inline">
+            <button class="btn btn-sm btn-light dropdown-toggle" type="button" 
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <h6 class="dropdown-header">Ubah Status</h6>
+                </li>
+                <li>
+                    <form action="{{ route('visits.updateStatus', $visit) }}" method="POST">
+                        @csrf @method('PATCH')
+                        <input type="hidden" name="status" value="menunggu">
+                        <button type="submit" class="dropdown-item" 
+                                @if($visit->status == 'menunggu') disabled @endif>
+                            <i class="fas fa-clock text-warning me-2"></i>Menunggu
+                        </button>
+                    </form>
+                </li>
+                <li>
+                    <form action="{{ route('visits.updateStatus', $visit) }}" method="POST">
+                        @csrf @method('PATCH')
+                        <input type="hidden" name="status" value="diperiksa">
+                        <button type="submit" class="dropdown-item"
+                                @if($visit->status == 'diperiksa') disabled @endif>
+                            <i class="fas fa-user-md text-info me-2"></i>Diperiksa
+                        </button>
+                    </form>
+                </li>
+                <li>
+                    <form action="{{ route('visits.updateStatus', $visit) }}" method="POST">
+                        @csrf @method('PATCH')
+                        <input type="hidden" name="status" value="selesai">
+                        <button type="submit" class="dropdown-item"
+                                @if($visit->status == 'selesai') disabled @endif>
+                            <i class="fas fa-check-circle text-success me-2"></i>Selesai
+                        </button>
+                    </form>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" href="{{ route('patients.show', $visit->patient) }}">
+                        <i class="fas fa-user text-info me-2"></i>Detail Pasien
+                    </a>
+                </li>
+                @if($visit->status == 'selesai' && !$visit->transaction)
+                <li>
+                    <a class="dropdown-item" href="{{ route('transactions.create', ['visit' => $visit->id]) }}">
+                        <i class="fas fa-cash-register text-secondary me-2"></i>Buat Transaksi
+                    </a>
+                </li>
+                @endif
+            </ul>
+        </div>
+    </div>
+</td>
                             </tr>
                             @empty
                             <tr>
