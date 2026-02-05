@@ -115,12 +115,6 @@ Route::get('/medicines/{medicine}/stock-history', [MedicineController::class, 's
         Route::get('/dashboard/dokter-stats', [DashboardController::class, 'dokterStats']);
         Route::get('/dashboard/kasir-stats', [DashboardController::class, 'kasirStats']);
         
-        // Queue Management
-        Route::get('/queue/current', [QueueController::class, 'currentQueue']);
-        Route::post('/queue/generate', [QueueController::class, 'generateNumber']);
-        Route::post('/queue/call-next', [QueueController::class, 'callNext']);
-        Route::get('/queue/next-patient', [QueueController::class, 'nextPatient']);
-        
         // Doctor Availability
         Route::post('/doctor/availability', [DashboardController::class, 'updateAvailability']);
         Route::get('/doctor/schedule', [DashboardController::class, 'doctorSchedule']);

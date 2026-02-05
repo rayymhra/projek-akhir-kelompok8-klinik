@@ -31,20 +31,40 @@ class PatientController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-            'tanggal_lahir' => 'required|date',
-            'jenis_kelamin' => 'required|in:L,P',
-            'alamat' => 'required|string',
-            'no_hp' => 'required|string|max:15'
-        ]);
+{
+    $validated = $request->validate([
+        'nama' => 'required|string|max:255',
+        'tanggal_lahir' => 'required|date',
+        'jenis_kelamin' => 'required|in:L,P',
+        'alamat' => 'required|string',
+        'no_hp' => 'required|string|max:15',
+        'no_hp_keluarga' => 'nullable|string|max:15',
+        'email' => 'nullable|email|max:255',
+        'nik' => 'nullable|string|max:16|unique:patients,nik',
+        'no_bpjs' => 'nullable|string|max:30',
+        'rt' => 'nullable|string|max:3',
+        'rw' => 'nullable|string|max:3',
+        'kelurahan' => 'nullable|string|max:100',
+        'kecamatan' => 'nullable|string|max:100',
+        'kota' => 'nullable|string|max:100',
+        'provinsi' => 'nullable|string|max:100',
+        'kode_pos' => 'nullable|string|max:5',
+        'golongan_darah' => 'nullable|in:A,B,AB,O',
+        'alergi' => 'nullable|string|max:500',
+        'riwayat_penyakit' => 'nullable|string',
+        'nama_keluarga' => 'nullable|string|max:255',
+        'hubungan_keluarga' => 'nullable|string|max:50',
+        'pekerjaan' => 'nullable|string|max:100',
+        'status_pernikahan' => 'nullable|in:Belum Menikah,Menikah,Cerai',
+        'catatan' => 'nullable|string'
+    ]);
 
-        $patient = Patient::create($validated);
-        
-        return redirect()->route('patients.show', $patient)
-            ->with('success', 'Data pasien berhasil ditambahkan.');
-    }
+    $patient = Patient::create($validated);
+    
+    return redirect()->route('patients.show', $patient)
+        ->with('success', 'Data pasien berhasil ditambahkan.');
+}
+
 
     public function show(Patient $patient)
     {
@@ -62,20 +82,40 @@ class PatientController extends Controller
     }
 
     public function update(Request $request, Patient $patient)
-    {
-        $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-            'tanggal_lahir' => 'required|date',
-            'jenis_kelamin' => 'required|in:L,P',
-            'alamat' => 'required|string',
-            'no_hp' => 'required|string|max:15'
-        ]);
+{
+    $validated = $request->validate([
+        'nama' => 'required|string|max:255',
+        'tanggal_lahir' => 'required|date',
+        'jenis_kelamin' => 'required|in:L,P',
+        'alamat' => 'required|string',
+        'no_hp' => 'required|string|max:15',
+        'no_hp_keluarga' => 'nullable|string|max:15',
+        'email' => 'nullable|email|max:255',
+        'nik' => 'nullable|string|max:16|unique:patients,nik,' . $patient->id,
+        'no_bpjs' => 'nullable|string|max:30',
+        'rt' => 'nullable|string|max:3',
+        'rw' => 'nullable|string|max:3',
+        'kelurahan' => 'nullable|string|max:100',
+        'kecamatan' => 'nullable|string|max:100',
+        'kota' => 'nullable|string|max:100',
+        'provinsi' => 'nullable|string|max:100',
+        'kode_pos' => 'nullable|string|max:5',
+        'golongan_darah' => 'nullable|in:A,B,AB,O',
+        'alergi' => 'nullable|string|max:500',
+        'riwayat_penyakit' => 'nullable|string',
+        'nama_keluarga' => 'nullable|string|max:255',
+        'hubungan_keluarga' => 'nullable|string|max:50',
+        'pekerjaan' => 'nullable|string|max:100',
+        'status_pernikahan' => 'nullable|in:Belum Menikah,Menikah,Cerai',
+        'catatan' => 'nullable|string',
+        'is_active' => 'nullable|boolean'
+    ]);
 
-        $patient->update($validated);
-        
-        return redirect()->route('patients.show', $patient)
-            ->with('success', 'Data pasien berhasil diperbarui.');
-    }
+    $patient->update($validated);
+    
+    return redirect()->route('patients.show', $patient)
+        ->with('success', 'Data pasien berhasil diperbarui.');
+}
 
     public function destroy(Patient $patient)
     {

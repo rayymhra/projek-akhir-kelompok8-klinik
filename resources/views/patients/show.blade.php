@@ -395,6 +395,67 @@
     </div>
 </div>
 
+<!-- Additional Information in Show Page -->
+<div class="detail-item mb-3">
+    <div class="d-flex justify-content-between">
+        <span class="text-muted">NIK</span>
+        <span class="font-weight-bold">{{ $patient->nik ?? '-' }}</span>
+    </div>
+</div>
+
+<div class="detail-item mb-3">
+    <div class="d-flex justify-content-between">
+        <span class="text-muted">No. BPJS</span>
+        <span class="font-weight-bold">{{ $patient->no_bpjs ?? '-' }}</span>
+    </div>
+</div>
+
+<div class="detail-item mb-3">
+    <div class="d-flex justify-content-between">
+        <span class="text-muted">Golongan Darah</span>
+        <span class="font-weight-bold">{{ $patient->golongan_darah ?? '-' }}</span>
+    </div>
+</div>
+
+<div class="detail-item mb-3">
+    <div class="d-flex justify-content-between">
+        <span class="text-muted">Alergi</span>
+        <span class="font-weight-bold">{{ $patient->alergi ?? 'Tidak ada' }}</span>
+    </div>
+</div>
+
+
+
+<div class="detail-item mb-3">
+    <div class="d-flex justify-content-between">
+        <span class="text-muted">Status Pernikahan</span>
+        <span class="font-weight-bold">{{ $patient->status_pernikahan ?? '-' }}</span>
+    </div>
+</div>
+
+<div class="detail-item mb-3">
+    <div class="d-flex justify-content-between">
+        <span class="text-muted">Email</span>
+        <span class="font-weight-bold">{{ $patient->email ?? '-' }}</span>
+    </div>
+</div>
+
+<div class="detail-item mb-3">
+    <div class="d-flex justify-content-between">
+        <span class="text-muted">No. HP Keluarga</span>
+        <span class="font-weight-bold">{{ $patient->no_hp_keluarga ?? '-' }}</span>
+    </div>
+</div>
+
+@if($patient->nama_keluarga)
+<div class="detail-item mb-3">
+    <div class="d-flex justify-content-between">
+        <span class="text-muted">Kontak Darurat</span>
+        <span class="font-weight-bold">{{ $patient->nama_keluarga }} ({{ $patient->hubungan_keluarga }})</span>
+    </div>
+</div>
+@endif
+
 <!-- Quick Actions Modal -->
 <div class="modal fade" id="quickActionsModal" tabindex="-1">
     <div class="modal-dialog">

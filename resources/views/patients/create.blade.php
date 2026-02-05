@@ -73,6 +73,185 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
+
+                    <!-- Identity Information -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label for="nik" class="form-label">NIK</label>
+        <input type="text" class="form-control @error('nik') is-invalid @enderror" 
+               id="nik" name="nik" value="{{ old('nik') }}">
+        @error('nik')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+    <div class="col-md-6">
+        <label for="no_bpjs" class="form-label">No. BPJS</label>
+        <input type="text" class="form-control @error('no_bpjs') is-invalid @enderror" 
+               id="no_bpjs" name="no_bpjs" value="{{ old('no_bpjs') }}">
+        @error('no_bpjs')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+</div>
+
+<!-- Additional Contact -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label for="no_hp_keluarga" class="form-label">No. HP Keluarga</label>
+        <input type="tel" class="form-control @error('no_hp_keluarga') is-invalid @enderror" 
+               id="no_hp_keluarga" name="no_hp_keluarga" value="{{ old('no_hp_keluarga') }}">
+        @error('no_hp_keluarga')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+    <div class="col-md-6">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control @error('email') is-invalid @enderror" 
+               id="email" name="email" value="{{ old('email') }}">
+        @error('email')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+</div>
+
+<!-- Address Details -->
+<div class="row mb-3">
+    <div class="col-md-3">
+        <label for="rt" class="form-label">RT</label>
+        <input type="text" class="form-control @error('rt') is-invalid @enderror" 
+               id="rt" name="rt" value="{{ old('rt') }}">
+        @error('rt')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+    <div class="col-md-3">
+        <label for="rw" class="form-label">RW</label>
+        <input type="text" class="form-control @error('rw') is-invalid @enderror" 
+               id="rw" name="rw" value="{{ old('rw') }}">
+        @error('rw')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+    <div class="col-md-6">
+        <label for="kode_pos" class="form-label">Kode Pos</label>
+        <input type="text" class="form-control @error('kode_pos') is-invalid @enderror" 
+               id="kode_pos" name="kode_pos" value="{{ old('kode_pos') }}">
+        @error('kode_pos')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-4">
+        <label for="kelurahan" class="form-label">Kelurahan</label>
+        <input type="text" class="form-control @error('kelurahan') is-invalid @enderror" 
+               id="kelurahan" name="kelurahan" value="{{ old('kelurahan') }}">
+        @error('kelurahan')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+    <div class="col-md-4">
+        <label for="kecamatan" class="form-label">Kecamatan</label>
+        <input type="text" class="form-control @error('kecamatan') is-invalid @enderror" 
+               id="kecamatan" name="kecamatan" value="{{ old('kecamatan') }}">
+        @error('kecamatan')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+    <div class="col-md-4">
+        <label for="kota" class="form-label">Kota/Kabupaten</label>
+        <input type="text" class="form-control @error('kota') is-invalid @enderror" 
+               id="kota" name="kota" value="{{ old('kota') }}">
+        @error('kota')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+</div>
+
+<!-- Medical Information -->
+<div class="row mb-3">
+    <div class="col-md-4">
+        <label for="golongan_darah" class="form-label">Golongan Darah</label>
+        <select class="form-select @error('golongan_darah') is-invalid @enderror" 
+                id="golongan_darah" name="golongan_darah">
+            <option value="">Pilih Golongan Darah</option>
+            <option value="A" {{ old('golongan_darah') == 'A' ? 'selected' : '' }}>A</option>
+            <option value="B" {{ old('golongan_darah') == 'B' ? 'selected' : '' }}>B</option>
+            <option value="AB" {{ old('golongan_darah') == 'AB' ? 'selected' : '' }}>AB</option>
+            <option value="O" {{ old('golongan_darah') == 'O' ? 'selected' : '' }}>O</option>
+        </select>
+        @error('golongan_darah')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+    <div class="col-md-4">
+        <label for="status_pernikahan" class="form-label">Status Pernikahan</label>
+        <select class="form-select @error('status_pernikahan') is-invalid @enderror" 
+                id="status_pernikahan" name="status_pernikahan">
+            <option value="">Pilih Status</option>
+            <option value="Belum Menikah" {{ old('status_pernikahan') == 'Belum Menikah' ? 'selected' : '' }}>Belum Menikah</option>
+            <option value="Menikah" {{ old('status_pernikahan') == 'Menikah' ? 'selected' : '' }}>Menikah</option>
+            <option value="Cerai" {{ old('status_pernikahan') == 'Cerai' ? 'selected' : '' }}>Cerai</option>
+        </select>
+        @error('status_pernikahan')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+    <div class="col-md-4">
+        <label for="pekerjaan" class="form-label">Pekerjaan</label>
+        <input type="text" class="form-control @error('pekerjaan') is-invalid @enderror" 
+               id="pekerjaan" name="pekerjaan" value="{{ old('pekerjaan') }}">
+        @error('pekerjaan')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label for="alergi" class="form-label">Alergi</label>
+        <input type="text" class="form-control @error('alergi') is-invalid @enderror" 
+               id="alergi" name="alergi" value="{{ old('alergi') }}" 
+               placeholder="Contoh: Penisilin, Debu, Makanan Laut">
+        @error('alergi')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+</div>
+
+<!-- Emergency Contact -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label for="nama_keluarga" class="form-label">Nama Keluarga (Darurat)</label>
+        <input type="text" class="form-control @error('nama_keluarga') is-invalid @enderror" 
+               id="nama_keluarga" name="nama_keluarga" value="{{ old('nama_keluarga') }}">
+        @error('nama_keluarga')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+    <div class="col-md-6">
+        <label for="hubungan_keluarga" class="form-label">Hubungan</label>
+        <input type="text" class="form-control @error('hubungan_keluarga') is-invalid @enderror" 
+               id="hubungan_keluarga" name="hubungan_keluarga" value="{{ old('hubungan_keluarga') }}"
+               placeholder="Contoh: Ibu, Suami, Anak">
+        @error('hubungan_keluarga')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+</div>
+
+<!-- Notes -->
+<div class="row mb-3">
+    <div class="col-12">
+        <label for="catatan" class="form-label">Catatan Tambahan</label>
+        <textarea class="form-control @error('catatan') is-invalid @enderror" 
+                  id="catatan" name="catatan" rows="2">{{ old('catatan') }}</textarea>
+        @error('catatan')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+</div>
                     
                     <div class="row">
                         <div class="col-md-6">

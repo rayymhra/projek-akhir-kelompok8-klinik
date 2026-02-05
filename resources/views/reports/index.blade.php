@@ -17,29 +17,29 @@
                     <div class="col-md-12">
                         <div class="btn-group w-100" role="group">
                             <a href="{{ route('reports.index', array_merge($filter, ['type' => 'visits'])) }}" 
-                               class="btn {{ ($filter['type'] ?? 'visits') == 'visits' ? 'btn-primary' : 'btn-outline-primary' }}">
+                                class="btn {{ ($filter['type'] ?? 'visits') == 'visits' ? 'btn-primary' : 'btn-outline-primary' }}">
                                 <i class="fas fa-calendar-check me-2"></i>Kunjungan
                             </a>
                             <a href="{{ route('reports.index', array_merge($filter, ['type' => 'transactions'])) }}" 
-                               class="btn {{ ($filter['type'] ?? '') == 'transactions' ? 'btn-primary' : 'btn-outline-primary' }}">
+                                class="btn {{ ($filter['type'] ?? '') == 'transactions' ? 'btn-primary' : 'btn-outline-primary' }}">
                                 <i class="fas fa-money-bill-wave me-2"></i>Transaksi
                             </a>
                             <a href="{{ route('reports.index', array_merge($filter, ['type' => 'patients'])) }}" 
-                               class="btn {{ ($filter['type'] ?? '') == 'patients' ? 'btn-primary' : 'btn-outline-primary' }}">
+                                class="btn {{ ($filter['type'] ?? '') == 'patients' ? 'btn-primary' : 'btn-outline-primary' }}">
                                 <i class="fas fa-user-injured me-2"></i>Pasien
                             </a>
                             <a href="{{ route('reports.index', array_merge($filter, ['type' => 'medicines'])) }}" 
-                               class="btn {{ ($filter['type'] ?? '') == 'medicines' ? 'btn-primary' : 'btn-outline-primary' }}">
+                                class="btn {{ ($filter['type'] ?? '') == 'medicines' ? 'btn-primary' : 'btn-outline-primary' }}">
                                 <i class="fas fa-pills me-2"></i>Obat
                             </a>
                             <a href="{{ route('reports.index', array_merge($filter, ['type' => 'income'])) }}" 
-                               class="btn {{ ($filter['type'] ?? '') == 'income' ? 'btn-primary' : 'btn-outline-primary' }}">
+                                class="btn {{ ($filter['type'] ?? '') == 'income' ? 'btn-primary' : 'btn-outline-primary' }}">
                                 <i class="fas fa-chart-line me-2"></i>Pendapatan
                             </a>
                         </div>
                     </div>
                 </div>
-
+                
                 <!-- Filter Form -->
                 <div class="row mb-4">
                     <div class="col-md-12">
@@ -49,13 +49,13 @@
                             <div class="col-md-3">
                                 <label class="form-label">Tanggal Mulai</label>
                                 <input type="date" class="form-control" name="start_date" 
-                                       value="{{ $filter['start_date'] }}" required>
+                                value="{{ $filter['start_date'] }}" required>
                             </div>
                             
                             <div class="col-md-3">
                                 <label class="form-label">Tanggal Akhir</label>
                                 <input type="date" class="form-control" name="end_date" 
-                                       value="{{ $filter['end_date'] }}" required>
+                                value="{{ $filter['end_date'] }}" required>
                             </div>
                             
                             @if(($filter['type'] ?? 'visits') == 'visits')
@@ -64,10 +64,10 @@
                                 <select name="doctor_id" class="form-select">
                                     <option value="">Semua Dokter</option>
                                     @foreach(\App\Models\User::where('role', 'dokter')->get() as $doctor)
-                                        <option value="{{ $doctor->id }}" 
-                                                {{ ($filter['doctor_id'] ?? '') == $doctor->id ? 'selected' : '' }}>
-                                            {{ $doctor->name }}
-                                        </option>
+                                    <option value="{{ $doctor->id }}" 
+                                        {{ ($filter['doctor_id'] ?? '') == $doctor->id ? 'selected' : '' }}>
+                                        {{ $doctor->name }}
+                                    </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -79,7 +79,7 @@
                                         <i class="fas fa-filter me-2"></i>Filter
                                     </button>
                                     <a href="{{ route('reports.index', ['type' => $filter['type'] ?? 'visits']) }}" 
-                                       class="btn btn-secondary">
+                                        class="btn btn-secondary">
                                         <i class="fas fa-redo me-2"></i>Reset
                                     </a>
                                     <a href="{{ route('reports.export', [
@@ -87,16 +87,16 @@
     'start_date' => $filter['start_date'] ?? null,
     'end_date' => $filter['end_date'] ?? null,
 ]) }}" class="btn btn-success" target="_blank">
-
+                                    
                                 </div>
                             </div>
                         </form>
                     </div>
                 </div>
-
+                
                 <!-- Report Content -->
                 @php
-                    $reportType = $reports['type'] ?? 'visits';
+                $reportType = $reports['type'] ?? 'visits';
                 @endphp
                 
                 @if($reportType == 'visits')
@@ -146,7 +146,7 @@
                         </div>
                     </div>
                 </div>
-
+                
                 <div class="row">
                     <div class="col-md-8">
                         <div class="card">
@@ -201,7 +201,7 @@
                     </div>
                 </div>
                 @endif
-
+                
                 @if($reportType == 'transactions')
                 <!-- Transaction Report -->
                 <div class="row mb-4">
@@ -249,7 +249,7 @@
                         </div>
                     </div>
                 </div>
-
+                
                 <div class="row">
                     <div class="col-md-7">
                         <div class="card">
@@ -278,18 +278,18 @@
                                                 <td>Rp {{ number_format($transaction->total_biaya, 0, ',', '.') }}</td>
                                                 <td>
                                                     @switch($transaction->metode_pembayaran)
-                                                        @case('tunai')
-                                                            <span class="badge bg-primary">Tunai</span>
-                                                            @break
-                                                        @case('transfer')
-                                                            <span class="badge bg-success">Transfer</span>
-                                                            @break
-                                                        @case('qris')
-                                                            <span class="badge bg-info">QRIS</span>
-                                                            @break
-                                                        @case('e-wallet')
-                                                            <span class="badge bg-warning">E-Wallet</span>
-                                                            @break
+                                                    @case('tunai')
+                                                    <span class="badge bg-primary">Tunai</span>
+                                                    @break
+                                                    @case('transfer')
+                                                    <span class="badge bg-success">Transfer</span>
+                                                    @break
+                                                    @case('qris')
+                                                    <span class="badge bg-info">QRIS</span>
+                                                    @break
+                                                    @case('e-wallet')
+                                                    <span class="badge bg-warning">E-Wallet</span>
+                                                    @break
                                                     @endswitch
                                                 </td>
                                                 <td>
@@ -321,7 +321,7 @@
                     </div>
                 </div>
                 @endif
-
+                
                 @if($reportType == 'patients')
                 <!-- Patient Report -->
                 <div class="row mb-4">
@@ -369,7 +369,7 @@
                         </div>
                     </div>
                 </div>
-
+                
                 <div class="row">
                     <div class="col-md-7">
                         <div class="card">
@@ -422,7 +422,7 @@
                     </div>
                 </div>
                 @endif
-
+                
                 @if($reportType == 'income')
                 <!-- Income Report -->
                 <div class="row mb-4">
@@ -470,7 +470,7 @@
                         </div>
                     </div>
                 </div>
-
+                
                 <div class="row">
                     <div class="col-md-8">
                         <div class="card">
@@ -586,8 +586,8 @@
         function renderPaymentMethodChart() {
             const ctx = document.getElementById('paymentMethodChart').getContext('2d');
             const data = @json($reports['payment_methods'] ?? []);
-
-
+            
+            
             
             const labels = Object.keys(data).map(method => {
                 const methodNames = {
@@ -606,10 +606,10 @@
                     datasets: [{
                         data: Object.values(data),
                         backgroundColor: [
-                            'rgba(54, 162, 235, 0.8)',
-                            'rgba(75, 192, 192, 0.8)',
-                            'rgba(255, 206, 86, 0.8)',
-                            'rgba(153, 102, 255, 0.8)'
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(255, 206, 86, 0.8)',
+                        'rgba(153, 102, 255, 0.8)'
                         ]
                     }]
                 },
@@ -635,11 +635,11 @@
                     datasets: [{
                         data: Object.values(data),
                         backgroundColor: [
-                            'rgba(255, 99, 132, 0.8)',
-                            'rgba(54, 162, 235, 0.8)',
-                            'rgba(255, 206, 86, 0.8)',
-                            'rgba(75, 192, 192, 0.8)',
-                            'rgba(153, 102, 255, 0.8)'
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(255, 206, 86, 0.8)',
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(153, 102, 255, 0.8)'
                         ]
                     }]
                 },
