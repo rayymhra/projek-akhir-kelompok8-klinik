@@ -17,6 +17,10 @@ class Transaction extends Model
         'bukti_pembayaran'
     ];
 
+    protected $casts = [
+        'total_biaya' => 'decimal:2',
+    ];
+
     public function visit()
     {
         return $this->belongsTo(Visit::class);

@@ -10,22 +10,55 @@ use Illuminate\Http\Request;
 class VisitController extends Controller
 {
     public function index(Request $request)
-    {
-        $query = Visit::with(['patient', 'doctor']);
-        
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-        
-        if ($request->has('tanggal')) {
-            $query->whereDate('tanggal_kunjungan', $request->tanggal);
-        }
-        
-        $visits = $query->orderBy('created_at', 'desc')->paginate(10);
-        $doctors = User::where('role', 'dokter')->get();
-        
-        return view('visits.index', compact('visits', 'doctors'));
+{
+    $query = Visit::with(['patient', 'doctor', 'medicalRecord']);
+    
+    // For doctors, only show their patients
+    if (auth()->user()->role == 'dokter') {
+        $query->where('doctor_id', auth()->id());
     }
+    
+    // Apply filters
+    if ($request->has('status')) {
+        $query->where('status', $request->status);
+    }
+    
+    if ($request->has('tanggal')) {
+        $query->whereDate('tanggal_kunjungan', $request->tanggal);
+    } else {
+        // For doctors, default to today's visits
+        if (auth()->user()->role == 'dokter') {
+            $query->whereDate('tanggal_kunjungan', today());
+        }
+    }
+    
+    // For admin search
+    if ($request->has('search')) {
+        $query->whereHas('patient', function($q) use ($request) {
+            $q->where('nama', 'like', '%' . $request->search . '%')
+              ->orWhere('no_rekam_medis', 'like', '%' . $request->search . '%');
+        });
+    }
+    
+    // Get visits
+    if (auth()->user()->role == 'dokter') {
+        $visits = $query->orderByRaw("
+                CASE 
+                    WHEN status = 'diperiksa' THEN 1
+                    WHEN status = 'menunggu' THEN 2
+                    WHEN status = 'selesai' THEN 3
+                END
+            ")
+            ->orderBy('created_at', 'asc')
+            ->get();
+    } else {
+        $visits = $query->orderBy('created_at', 'desc')->paginate(10);
+    }
+    
+    $doctors = User::where('role', 'dokter')->get();
+    
+    return view('visits.index', compact('visits', 'doctors'));
+}
 
     public function create()
 {
@@ -37,20 +70,50 @@ class VisitController extends Controller
 }
 
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'patient_id' => 'required|exists:patients,id',
-            'doctor_id' => 'required|exists:users,id',
-            'tanggal_kunjungan' => 'required|date'
-        ]);
+{
+    $validated = $request->validate([
+        'patient_id' => 'required|exists:patients,id',
+        'doctor_id' => 'required|exists:users,id',
+        'tanggal_kunjungan' => 'required|date',
+        'poli' => 'nullable|string|max:50',
+        'prioritas' => 'nullable|in:normal,prioritas'
+    ]);
 
-        $validated['status'] = 'menunggu';
+    // Get doctor info
+    $doctor = User::findOrFail($request->doctor_id);
+    
+    // Generate queue number
+    $lastQueue = Visit::whereDate('tanggal_kunjungan', $request->tanggal_kunjungan)
+        ->orderBy('nomor_antrian', 'desc')
+        ->first();
+    
+    $nextQueueNumber = $lastQueue ? $lastQueue->nomor_antrian + 1 : 1;
+    
+    // Determine prefix based on priority
+    $prefix = $request->prioritas == 'prioritas' ? 'P' : 'A';
+    
+    // For priority patients, you might want a different numbering system
+    if ($request->prioritas == 'prioritas') {
+        $lastPriority = Visit::whereDate('tanggal_kunjungan', $request->tanggal_kunjungan)
+            ->where('prioritas', 'prioritas')
+            ->orderBy('nomor_antrian', 'desc')
+            ->first();
         
-        Visit::create($validated);
-        
-        return redirect()->route('visits.index')
-            ->with('success', 'Kunjungan berhasil didaftarkan.');
+        $nextQueueNumber = $lastPriority ? $lastPriority->nomor_antrian + 1 : 1;
+        $prefix = 'P';
     }
+    
+    $validated['status'] = 'menunggu';
+    $validated['nomor_antrian'] = $nextQueueNumber;
+    $validated['prefix_antrian'] = $prefix;
+    $validated['prioritas'] = $request->prioritas ?? 'normal';
+    $validated['poli'] = $request->poli ?? 'Umum';
+    
+    $visit = Visit::create($validated);
+    
+    return redirect()->route('visits.index')
+        ->with('success', 'Kunjungan berhasil didaftarkan. Nomor Antrian: ' . $visit->nomor_antrian_full);
+}
 
     public function updateStatus(Request $request, Visit $visit)
     {
@@ -89,32 +152,42 @@ class VisitController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
             
-        return view('visits.antrian', compact('todayVisits'));
+            $visits = Visit::with(['patient', 'doctor'])
+           ->whereDate('tanggal_kunjungan', today())
+           ->whereIn('status', ['menunggu', 'diperiksa', 'selesai'])
+           ->orderByRaw("
+               CASE 
+                   WHEN status = 'diperiksa' THEN 1
+                   WHEN status = 'menunggu' THEN 2
+                   WHEN status = 'selesai' THEN 3
+               END
+           ")
+           ->orderBy('created_at', 'asc')
+           ->get();
+        return view('visits.antrian', compact('todayVisits', 'visits'));
+
+        
     }
 
     public function estimateQueue(Request $request)
 {
     $date = $request->input('date');
     $doctorId = $request->input('doctor_id');
-    $priority = $request->input('priority', false);
+    $priority = $request->input('priority', false) === 'true';
     
     // Get the count of visits for the selected date and doctor
-    $visitCount = Visit::whereDate('tanggal_kunjungan', $date)
-        ->where('doctor_id', $doctorId)
-        ->count();
+    $query = Visit::whereDate('tanggal_kunjungan', $date)
+        ->where('doctor_id', $doctorId);
     
-    // Calculate queue number (next in line)
-    $queueNumber = $visitCount + 1;
-    
-    // If priority, adjust queue logic (you can customize this)
     if ($priority) {
-        // Priority patients might get special queue numbers
-        $priorityCount = Visit::whereDate('tanggal_kunjungan', $date)
-            ->where('doctor_id', $doctorId)
-            ->where('prioritas', true)
-            ->count();
-        
-        $queueNumber = 'P-' . ($priorityCount + 1);
+        // For priority, count only priority visits
+        $query->where('prioritas', 'prioritas');
+        $visitCount = $query->count();
+        $queueNumber = $visitCount + 1;
+    } else {
+        // For normal, count all visits
+        $visitCount = $query->count();
+        $queueNumber = $visitCount + 1;
     }
     
     // Estimate wait time (assuming 15 minutes per patient)
@@ -124,5 +197,26 @@ class VisitController extends Controller
         'queue_number' => $queueNumber,
         'wait_time' => $estimatedWait
     ]);
+}
+
+public function dokterAntrian(Request $request)
+{
+    $doctorId = auth()->id();
+    
+    $visits = Visit::with(['patient'])
+        ->whereDate('tanggal_kunjungan', today())
+        ->where('doctor_id', $doctorId)
+        ->whereIn('status', ['menunggu', 'diperiksa', 'selesai'])
+        ->orderByRaw("
+            CASE 
+                WHEN status = 'diperiksa' THEN 1
+                WHEN status = 'menunggu' THEN 2
+                WHEN status = 'selesai' THEN 3
+            END
+        ")
+        ->orderBy('created_at', 'asc')
+        ->get();
+        
+    return view('visits.dokter-antrian', compact('visits'));
 }
 }

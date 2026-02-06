@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Patient;
-use App\Models\Visit;
-use App\Models\Medicine;
-use App\Models\User;
-use App\Models\Transaction;
 use Carbon\Carbon;
+use App\Models\User;
+use App\Models\Visit;
+use App\Models\Patient;
+use App\Models\Medicine;
+use App\Models\Transaction;
+use App\Models\MedicalRecord;
 
 class DashboardController extends Controller
 {
@@ -108,15 +109,94 @@ class DashboardController extends Controller
 
 
 
-    public function dokter()
-    {
-        return view('dashboard.dokter');
-    }
+  public function dokter()
+{
+    $doctorId = auth()->id();
+    
+    // Get today's visits for this doctor
+    $todayVisits = Visit::with(['patient', 'medicalRecord'])
+        ->where('doctor_id', $doctorId)
+        ->whereDate('tanggal_kunjungan', today())
+        ->orderByRaw("
+            CASE 
+                WHEN status = 'diperiksa' THEN 1
+                WHEN status = 'menunggu' THEN 2
+                WHEN status = 'selesai' THEN 3
+            END
+        ")
+        ->orderBy('created_at', 'asc')
+        ->get();
+        
+    // Get recent medical records (last 7 days)
+    $recentRecords = MedicalRecord::whereHas('visit', function($query) use ($doctorId) {
+        $query->where('doctor_id', $doctorId)
+              ->whereDate('created_at', '>=', now()->subDays(7));
+    })
+    ->with(['visit.patient'])
+    ->orderBy('created_at', 'desc')
+    ->get();
+    
+    // Calculate statistics
+    $stats = [
+        'waitingPatients' => $todayVisits->where('status', 'menunggu')->count(),
+        'completedToday' => $todayVisits->where('status', 'selesai')->count(),
+        'todayAppointments' => $todayVisits->count(),
+        'avgRecords' => round($recentRecords->count() / 7, 1),
+    ];
+    
+    return view('dashboard.dokter', compact('todayVisits', 'recentRecords', 'stats'));
+}
+
 
     public function kasir()
-    {
-        return view('dashboard.kasir');
-    }
+{
+    $today = Carbon::today();
+
+    $todayTransactions = Transaction::whereDate('created_at', $today)->count();
+
+    $todayIncome = Transaction::whereDate('created_at', $today)
+        ->where('status', 'lunas')
+        ->sum('total_biaya');
+
+    $pendingTransactions = Transaction::where('status', 'menunggu')->count();
+
+    $avgTransaction = Transaction::whereDate('created_at', $today)
+        ->where('status', 'lunas')
+        ->avg('total_biaya') ?? 0;
+
+    $pendingPayments = Transaction::with('visit.patient')
+        ->where('status', 'menunggu')
+        ->latest()
+        ->take(5)
+        ->get();
+
+    $recentTransactions = Transaction::with('visit.patient')
+        ->latest()
+        ->take(5)
+        ->get();
+
+    // Payment method stats
+    $cashAmount = Transaction::whereDate('created_at', $today)->where('metode_pembayaran', 'tunai')->sum('total_biaya');
+    $transferAmount = Transaction::whereDate('created_at', $today)->where('metode_pembayaran', 'transfer')->sum('total_biaya');
+    $qrisAmount = Transaction::whereDate('created_at', $today)->where('metode_pembayaran', 'qris')->sum('total_biaya');
+    $ewalletAmount = Transaction::whereDate('created_at', $today)->where('metode_pembayaran', 'e-wallet')->sum('total_biaya');
+
+    $stats = compact(
+        'todayTransactions',
+        'todayIncome',
+        'pendingTransactions',
+        'avgTransaction',
+        'pendingPayments',
+        'recentTransactions',
+        'cashAmount',
+        'transferAmount',
+        'qrisAmount',
+        'ewalletAmount'
+    );
+
+    return view('dashboard.kasir', compact('stats'));
+}
+
 
     
 }

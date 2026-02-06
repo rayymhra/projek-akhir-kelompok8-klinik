@@ -5,82 +5,180 @@ namespace App\Http\Controllers;
 use App\Models\MedicalRecord;
 use App\Models\Visit;
 use App\Models\Medicine;
+use App\Models\Prescription;
 use Illuminate\Http\Request;
 
 class MedicalRecordController extends Controller
 {
     public function create(Visit $visit)
     {
-        $medicines = Medicine::where('stok', '>', 0)->get();
+        // Verify that the visit belongs to the doctor
+        if (auth()->user()->role == 'dokter' && $visit->doctor_id != auth()->id()) {
+            abort(403, 'Anda tidak memiliki akses ke kunjungan ini.');
+        }
+        
+        // Check if medical record already exists
+        if ($visit->medicalRecord) {
+            return redirect()->route('medical-records.edit', $visit->medicalRecord)
+                ->with('info', 'Rekam medis sudah ada. Anda dapat mengeditnya.');
+        }
+        
+        $medicines = Medicine::where('stok', '>', 0)->orderBy('nama_obat')->get();
         
         return view('medical_records.create', compact('visit', 'medicines'));
     }
-
-    public function store(Request $request, Visit $visit)
+    
+    public function store(Request $request)
     {
-        DB::beginTransaction();
+        $validated = $request->validate([
+        'visit_id' => 'required|exists:visits,id',
+        'keluhan' => 'required|string|max:1000',
+        'diagnosa' => 'required|string|max:500',
+        'tindakan' => 'nullable|string|max:1000',
+        'catatan' => 'nullable|string|max:1000',
         
-        try {
-            $validated = $request->validate([
-                'keluhan' => 'required|string',
-                'diagnosa' => 'required|string',
-                'tindakan' => 'nullable|string',
-                'catatan' => 'nullable|string',
-                'medicines' => 'nullable|array',
-                'medicines.*.id' => 'required|exists:medicines,id',
-                'medicines.*.jumlah' => 'required|integer|min:1',
-                'medicines.*.aturan_pakai' => 'required|string'
-            ]);
-            
-            // Create medical record
-            $medicalRecord = MedicalRecord::create([
-                'visit_id' => $visit->id,
-                'keluhan' => $validated['keluhan'],
-                'diagnosa' => $validated['diagnosa'],
-                'tindakan' => $validated['tindakan'] ?? null,
-                'catatan' => $validated['catatan'] ?? null
-            ]);
-            
-            // Create prescriptions
-            if (isset($validated['medicines'])) {
-                foreach ($validated['medicines'] as $medicineData) {
-                    $medicine = Medicine::find($medicineData['id']);
-                    
-                    // Check stock
-                    if ($medicine->stok < $medicineData['jumlah']) {
-                        throw new \Exception("Stok obat {$medicine->nama_obat} tidak mencukupi");
-                    }
-                    
-                    // Create prescription
-                    $medicalRecord->prescriptions()->create([
-                        'medicine_id' => $medicineData['id'],
-                        'jumlah' => $medicineData['jumlah'],
-                        'aturan_pakai' => $medicineData['aturan_pakai']
-                    ]);
-                    
-                    // Reduce stock
-                    $medicine->reduceStock($medicineData['jumlah']);
-                }
-            }
-            
-            // Update visit status
-            $visit->update(['status' => 'selesai']);
-            
-            DB::commit();
-            
-            return redirect()->route('visits.index')
-                ->with('success', 'Rekam medis berhasil disimpan.');
+        // New fields
+        'tekanan_darah' => 'nullable|string|max:20',
+        'nadi' => 'nullable|string|max:20',
+        'suhu' => 'nullable|string|max:20',
+        'pernafasan' => 'nullable|string|max:20',
+        'pemeriksaan_fisik' => 'nullable|string|max:1000',
+        
+        'medicines' => 'nullable|array',
+        'medicines.*.medicine_id' => 'required_with:medicines|exists:medicines,id',
+        'medicines.*.jumlah' => 'required_with:medicines|integer|min:1',
+        'medicines.*.aturan_pakai' => 'required_with:medicines|string|max:255',
+    ]);
+    
+    // Create medical record with all fields
+    $medicalRecord = MedicalRecord::create([
+        'visit_id' => $validated['visit_id'],
+        'keluhan' => $validated['keluhan'],
+        'diagnosa' => $validated['diagnosa'],
+        'tindakan' => $validated['tindakan'] ?? null,
+        'catatan' => $validated['catatan'] ?? null,
+        'tekanan_darah' => $validated['tekanan_darah'] ?? null,
+        'nadi' => $validated['nadi'] ?? null,
+        'suhu' => $validated['suhu'] ?? null,
+        'pernafasan' => $validated['pernafasan'] ?? null,
+        'pemeriksaan_fisik' => $validated['pemeriksaan_fisik'] ?? null,
+    ]);
+    
+        
+        // Create prescriptions if any
+        if (!empty($validated['medicines'])) {
+            foreach ($validated['medicines'] as $medicineData) {
+                // Check stock availability
+                $medicine = Medicine::findOrFail($medicineData['medicine_id']);
                 
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Gagal menyimpan rekam medis: ' . $e->getMessage());
+                if ($medicine->stok < $medicineData['jumlah']) {
+                    // Delete medical record if stock insufficient
+                    $medicalRecord->delete();
+                    return back()->with('error', "Stok obat {$medicine->nama_obat} tidak mencukupi. Stok tersedia: {$medicine->stok}");
+                }
+                
+                // Create prescription
+                Prescription::create([
+                    'medical_record_id' => $medicalRecord->id,
+                    'medicine_id' => $medicineData['medicine_id'],
+                    'jumlah' => $medicineData['jumlah'],
+                    'aturan_pakai' => $medicineData['aturan_pakai'],
+                ]);
+                
+                // Update medicine stock
+                $medicine->decrement('stok', $medicineData['jumlah']);
+            }
         }
+        
+        // Update visit status to 'selesai'
+        $visit = Visit::findOrFail($validated['visit_id']);
+        $visit->update([
+            'status' => 'selesai',
+            'waktu_selesai' => now(),
+        ]);
+        
+        return redirect()->route('visits.index')
+            ->with('success', 'Rekam medis berhasil disimpan dan kunjungan ditandai selesai.');
     }
-
+    
     public function show(MedicalRecord $medicalRecord)
     {
-        $medicalRecord->load(['visit.patient', 'prescriptions.medicine']);
+        // Verify access
+        if (auth()->user()->role == 'dokter' && $medicalRecord->visit->doctor_id != auth()->id()) {
+            abort(403, 'Anda tidak memiliki akses ke rekam medis ini.');
+        }
+        
+        $medicalRecord->load(['visit.patient', 'visit.doctor', 'prescriptions.medicine']);
         
         return view('medical_records.show', compact('medicalRecord'));
+    }
+    
+    public function edit(MedicalRecord $medicalRecord)
+    {
+        // Verify access
+        if (auth()->user()->role == 'dokter' && $medicalRecord->visit->doctor_id != auth()->id()) {
+            abort(403, 'Anda tidak memiliki akses ke rekam medis ini.');
+        }
+        
+        $medicines = Medicine::where('stok', '>', 0)->orderBy('nama_obat')->get();
+        
+        return view('medical_records.edit', compact('medicalRecord', 'medicines'));
+    }
+    
+    public function update(Request $request, MedicalRecord $medicalRecord)
+    {
+        // Verify access
+        if (auth()->user()->role == 'dokter' && $medicalRecord->visit->doctor_id != auth()->id()) {
+            abort(403, 'Anda tidak memiliki akses ke rekam medis ini.');
+        }
+        
+        $validated = $request->validate([
+            'keluhan' => 'required|string|max:1000',
+            'diagnosa' => 'required|string|max:500',
+            'tindakan' => 'nullable|string|max:1000',
+            'catatan' => 'nullable|string|max:1000',
+            'tekanan_darah' => 'nullable|string|max:20',
+            'nadi' => 'nullable|string|max:20',
+            'suhu' => 'nullable|string|max:20',
+            'pernafasan' => 'nullable|string|max:20',
+            'pemeriksaan_fisik' => 'nullable|string|max:1000',
+        ]);
+        
+        $medicalRecord->update($validated);
+        
+        return redirect()->route('medical-records.show', $medicalRecord)
+            ->with('success', 'Rekam medis berhasil diperbarui.');
+    }
+    
+    public function index(Request $request)
+    {
+        $query = MedicalRecord::with(['visit.patient', 'visit.doctor']);
+        
+        // Filter by doctor if user is a doctor
+        if (auth()->user()->role == 'dokter') {
+            $query->whereHas('visit', function($q) {
+                $q->where('doctor_id', auth()->id());
+            });
+        }
+        
+        // Filter by date
+        if ($request->has('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        
+        if ($request->has('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+        
+        // Filter by patient name
+        if ($request->has('search')) {
+            $query->whereHas('visit.patient', function($q) use ($request) {
+                $q->where('nama', 'like', '%' . $request->search . '%');
+            });
+        }
+        
+        $medicalRecords = $query->orderBy('created_at', 'desc')->paginate(15);
+        
+        return view('medical_records.index', compact('medicalRecords'));
     }
 }

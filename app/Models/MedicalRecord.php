@@ -14,7 +14,12 @@ class MedicalRecord extends Model
         'keluhan',
         'diagnosa',
         'tindakan',
-        'catatan'
+        'catatan',
+        'tekanan_darah',
+        'nadi',
+        'suhu',
+        'pernafasan',
+        'pemeriksaan_fisik'
     ];
 
     public function visit()

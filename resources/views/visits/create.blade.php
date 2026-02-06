@@ -165,6 +165,18 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+
+<div class="col-md-4 mb-3">
+    <label class="form-label">Nomor Antrian</label>
+    <div class="alert alert-info mb-0" id="queueNumberPreview">
+        <div class="text-center">
+            <h4 class="mb-1">Akan Ditentukan</h4>
+            <small class="text-muted">Setelah disimpan</small>
+        </div>
+    </div>
+</div>
+
+                        
                         
                         <div class="col-md-6 mb-3">
                             <label for="poli" class="form-label">Poliklinik <span class="text-danger">*</span></label>
@@ -196,20 +208,14 @@
                         </div>
                         
                         <!-- Priority -->
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Prioritas</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="prioritas" name="prioritas" 
-                                       value="1" {{ old('prioritas') ? 'checked' : '' }}>
-                                <label class="form-check-label" for="prioritas">
-                                    <i class="fas fa-exclamation-triangle text-danger me-1"></i>
-                                    Kunjungan Prioritas (Lansia/Hamil/Disabilitas/Darurat)
-                                </label>
-                            </div>
-                            <div class="form-text">
-                                Kunjungan prioritas akan mendapat antrian lebih cepat
-                            </div>
-                        </div>
+                        <div class="col-md-4 mb-3">
+    <label for="prioritas" class="form-label">Prioritas</label>
+    <select class="form-select" id="prioritas" name="prioritas">
+        <option value="normal">Normal</option>
+        <option value="prioritas">Prioritas (Lansia/Hamil/Darurat)</option>
+    </select>
+    <div class="form-text">Prioritas akan mendapat antrian khusus</div>
+</div>
                         
                         <!-- Payment Type -->
                         <div class="col-md-6 mb-3">
@@ -338,5 +344,68 @@
             submitBtn.disabled = true;
         });
     });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('tanggal_kunjungan');
+    const doctorSelect = document.getElementById('doctor_id');
+    const prioritySelect = document.getElementById('prioritas');
+    const queuePreview = document.getElementById('queueNumberPreview');
+    
+    function updateQueuePreview() {
+        const tanggal = dateInput.value;
+        const dokterId = doctorSelect.value;
+        const prioritas = prioritySelect.value;
+        
+        if (tanggal && dokterId) {
+            // Fetch queue number estimate
+            fetch(`/api/visits/estimate-queue?date=${tanggal}&doctor_id=${dokterId}&priority=${prioritas === 'prioritas'}`)
+                .then(response => response.json())
+                .then(data => {
+                    const prefix = prioritas === 'prioritas' ? 'P' : 'A';
+                    const queueNumber = data.queue_number || '001';
+                    
+                    queuePreview.innerHTML = `
+                        <div class="text-center">
+                            <h4 class="mb-1">${prefix}-${String(queueNumber).padStart(3, '0')}</h4>
+                            <small class="text-muted">Perkiraan nomor antrian</small>
+                            <br>
+                            <small>Prioritas: ${prioritas === 'prioritas' ? 'Ya' : 'Tidak'}</small>
+                            <br>
+                            <small>Perkiraan tunggu: ${data.wait_time || '15'} menit</small>
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error fetching queue estimate:', error);
+                    const prefix = prioritas === 'prioritas' ? 'P' : 'A';
+                    queuePreview.innerHTML = `
+                        <div class="text-center">
+                            <h4 class="mb-1">${prefix}-XXX</h4>
+                            <small class="text-muted">Perkiraan nomor antrian</small>
+                            <br>
+                            <small>Prioritas: ${prioritas === 'prioritas' ? 'Ya' : 'Tidak'}</small>
+                        </div>
+                    `;
+                });
+        } else {
+            queuePreview.innerHTML = `
+                <div class="text-center">
+                    <h4 class="mb-1">Akan Ditentukan</h4>
+                    <small class="text-muted">Pilih tanggal dan dokter</small>
+                </div>
+            `;
+        }
+    }
+    
+    // Add event listeners
+    dateInput.addEventListener('change', updateQueuePreview);
+    doctorSelect.addEventListener('change', updateQueuePreview);
+    prioritySelect.addEventListener('change', updateQueuePreview);
+    
+    // Initial update
+    updateQueuePreview();
+});
 </script>
 @endsection

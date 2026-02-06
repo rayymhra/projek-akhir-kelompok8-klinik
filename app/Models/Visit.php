@@ -13,12 +13,35 @@ class Visit extends Model
         'patient_id',
         'doctor_id',
         'tanggal_kunjungan',
-        'status'
+        'status',
+        'nomor_antrian',
+        'prefix_antrian',
+        'waktu_dipanggil',
+        'waktu_selesai',
+        'poli',
+        'prioritas'
     ];
 
     protected $casts = [
-        'tanggal_kunjungan' => 'date'
+        'tanggal_kunjungan' => 'date',
+        'waktu_dipanggil' => 'datetime',
+        'waktu_selesai' => 'datetime'
     ];
+
+    // Helper method to get full queue number
+    public function getNomorAntrianFullAttribute()
+    {
+        if ($this->prefix_antrian && $this->nomor_antrian) {
+            return $this->prefix_antrian . '-' . str_pad($this->nomor_antrian, 3, '0', STR_PAD_LEFT);
+        }
+        return str_pad($this->nomor_antrian, 3, '0', STR_PAD_LEFT);
+    }
+
+    // Scope for today's visits
+    public function scopeHariIni($query)
+    {
+        return $query->whereDate('tanggal_kunjungan', today());
+    }
 
     public function patient()
     {
@@ -39,4 +62,5 @@ class Visit extends Model
     {
         return $this->hasOne(Transaction::class);
     }
+    
 }

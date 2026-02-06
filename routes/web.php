@@ -6,30 +6,42 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\VisitController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\PatientController;
+use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\MedicalRecordController;
-use App\Http\Controllers\QueueController;
 
-Route::patch('/visits/{visit}/update-status', [VisitController::class, 'updateStatus'])
-    ->name('visits.updateStatus')
-    ->middleware('auth');
-
-// Authentication Routes
+/*
+|--------------------------------------------------------------------------
+| AUTH ROUTES (PUBLIC)
+|--------------------------------------------------------------------------
+*/
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', action: [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// AJAX Patient Routes
-Route::get('/patients/search', [PatientController::class, 'search'])->name('patients.search');
-Route::get('/patients/{patient}/quick-info', [PatientController::class, 'quickInfo'])->name('patients.quick-info');
-Route::get('/patients/{patient}/data', [PatientController::class, 'data'])->name('patients.data');
+
+/*
+|--------------------------------------------------------------------------
+| PUBLIC QUEUE PAGE
+|--------------------------------------------------------------------------
+*/
+Route::get('/antrian', [VisitController::class, 'antrian'])->name('visits.antrian');
 
 
-// Protected Routes
+/*
+|--------------------------------------------------------------------------
+| PROTECTED ROUTES
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth'])->group(function () {
-    // Dashboard Routes based on role
+
+    /*
+    |--------------------------------------------------------------------------
+    | DASHBOARD PER ROLE
+    |--------------------------------------------------------------------------
+    */
     Route::get('/admin/dashboard', [DashboardController::class, 'admin'])
         ->name('admin.dashboard')->middleware('role:admin');
 
@@ -42,118 +54,222 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/kasir/dashboard', [DashboardController::class, 'kasir'])
         ->name('kasir.dashboard')->middleware('role:kasir');
 
-    // Patient Routes
-    Route::resource('patients', PatientController::class)->middleware('role:admin,petugas');
-    
-    // Patient AJAX Routes
-    Route::get('/patients/search', [PatientController::class, 'search'])
-        ->name('patients.search')->middleware('role:admin,petugas');
-    
-    Route::get('/patients/{patient}/data', [PatientController::class, 'data'])
-        ->name('patients.data')->middleware('role:admin,petugas');
-    
-    Route::get('/patients/{patient}/quick-info', [PatientController::class, 'quickInfo'])
-        ->name('patients.quick-info')->middleware('role:admin,petugas');
 
-    // Visit Routes
-    Route::resource('visits', VisitController::class)->middleware('role:admin,petugas');
-    Route::patch('/visits/{id}/status', [VisitController::class, 'updateStatus'])
-    ->name('visits.updateStatus');
+    /*
+|--------------------------------------------------------------------------
+| PATIENT ROUTES (FIXED ORDER)
+|--------------------------------------------------------------------------
+| Doctor can VIEW
+| Only admin & petugas can MANAGE
+*/
 
-    Route::get('/antrian', [VisitController::class, 'antrian'])->name('dokter.antrian')->middleware('role:dokter');
-    
-    // Queue Estimation API
-    Route::get('/api/visits/estimate-queue', [VisitController::class, 'estimateQueue'])
-        ->name('visits.estimate-queue')->middleware('role:admin,petugas');
+// View list
+Route::get('/patients', [PatientController::class, 'index'])
+    ->name('patients.index')
+    ->middleware('role:admin,petugas,dokter');
 
-    // Medical Record Routes
-    Route::get('/visits/{visit}/medical-record/create', [MedicalRecordController::class, 'create'])
-        ->name('medical-records.create')->middleware('role:dokter');
-    Route::post('/visits/{visit}/medical-record', [MedicalRecordController::class, 'store'])
-        ->name('medical-records.store')->middleware('role:dokter');
-    Route::get('/medical-records/{medicalRecord}', [MedicalRecordController::class, 'show'])
-        ->name('medical-records.show');
+// CREATE (must be BEFORE {patient})
+Route::get('/patients/create', [PatientController::class, 'create'])
+    ->name('patients.create')
+    ->middleware('role:admin,petugas');
 
-        // Medicine Special Routes FIRST
-Route::get('/medicines/low-stock', [MedicineController::class, 'lowStock'])
-    ->name('medicines.low-stock')->middleware('role:admin,dokter');
+Route::post('/patients', [PatientController::class, 'store'])
+    ->name('patients.store')
+    ->middleware('role:admin,petugas');
 
-Route::get('/medicines/expired-soon', [MedicineController::class, 'expiredSoon'])
-    ->name('medicines.expired-soon')->middleware('role:admin,dokter');
+// SHOW (dynamic)
+Route::get('/patients/{patient}', [PatientController::class, 'show'])
+    ->name('patients.show')
+    ->middleware('role:admin,petugas,dokter');
 
-Route::get('/medicines/{medicine}/stock-history', [MedicineController::class, 'stockHistory'])
-    ->name('medicines.stock-history')->middleware('role:admin,dokter');
+// EDIT
+Route::get('/patients/{patient}/edit', [PatientController::class, 'edit'])
+    ->name('patients.edit')
+    ->middleware('role:admin,petugas');
 
-    // Medicine Routes
-    Route::resource('medicines', MedicineController::class)->middleware('role:admin,dokter');
+Route::put('/patients/{patient}', [PatientController::class, 'update'])
+    ->name('patients.update')
+    ->middleware('role:admin,petugas');
+
+// DELETE
+Route::delete('/patients/{patient}', [PatientController::class, 'destroy'])
+    ->name('patients.destroy')
+    ->middleware('role:admin');
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | VISITS (QUEUE & EXAMINATION)
+    |--------------------------------------------------------------------------
+    */
+    Route::resource('visits', VisitController::class)
+        ->middleware('role:admin,petugas,dokter');
+
+    Route::patch('/visits/{visit}/update-status', [VisitController::class, 'updateStatus'])
+        ->name('visits.updateStatus')->middleware('role:admin,petugas,dokter');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | MEDICAL RECORDS
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('medical-records')->group(function () {
+
+        Route::get('/', [MedicalRecordController::class, 'index'])
+            ->name('medical-records.index')->middleware('role:admin,dokter');
+
+        Route::get('/create/{visit}', [MedicalRecordController::class, 'create'])
+            ->name('medical-records.create')->middleware('role:dokter');
+
+        Route::post('/', [MedicalRecordController::class, 'store'])
+            ->name('medical-records.store')->middleware('role:dokter');
+
+        Route::get('/{medicalRecord}', [MedicalRecordController::class, 'show'])
+            ->name('medical-records.show')->middleware('role:admin,dokter');
+
+        Route::get('/{medicalRecord}/edit', [MedicalRecordController::class, 'edit'])
+            ->name('medical-records.edit')->middleware('role:dokter');
+
+        Route::put('/{medicalRecord}', [MedicalRecordController::class, 'update'])
+            ->name('medical-records.update')->middleware('role:dokter');
+    });
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | MEDICINES
+    |--------------------------------------------------------------------------
+    */
     Route::get('/medicines/low-stock', [MedicineController::class, 'lowStock'])
         ->name('medicines.low-stock')->middleware('role:admin,dokter');
+
     Route::get('/medicines/expired-soon', [MedicineController::class, 'expiredSoon'])
         ->name('medicines.expired-soon')->middleware('role:admin,dokter');
+
     Route::get('/medicines/{medicine}/stock-history', [MedicineController::class, 'stockHistory'])
         ->name('medicines.stock-history')->middleware('role:admin,dokter');
 
-    // Transaction Routes
-    Route::resource('transactions', TransactionController::class)->middleware('role:kasir');
+    Route::resource('medicines', MedicineController::class)
+        ->middleware('role:admin,dokter');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | TRANSACTIONS (KASIR ONLY)
+    |--------------------------------------------------------------------------
+    */
+    // Route::resource('transactions', TransactionController::class)
+    //     ->middleware('role:kasir');
+
     Route::post('/transactions/{transaction}/confirm', [TransactionController::class, 'confirmPayment'])
         ->name('transactions.confirm')->middleware('role:kasir');
 
-    // User Management Routes (Admin only)
+    Route::get('/transactions/{transaction}/print', [TransactionController::class, 'printInvoice'])
+    ->name('transactions.print')->middleware('role:kasir');
+
+
+Route::prefix('transactions')->name('transactions.')->group(function () {
+    Route::get('/', [TransactionController::class, 'index'])->name('index');
+    Route::get('/create/step1', [TransactionController::class, 'step1'])->name('step1');
+    Route::get('/create/step2/{visit}', [TransactionController::class, 'step2'])->name('step2');
+    Route::get('/create/step3/{visit}', [TransactionController::class, 'step3'])->name('step3');
+    Route::post('/cart/{visit}/add', [TransactionController::class, 'addToCart'])->name('addToCart');
+    Route::post('/cart/{visit}/remove', [TransactionController::class, 'removeFromCart'])->name('removeFromCart');
+    Route::post('/cart/{visit}/add-prescriptions', [TransactionController::class, 'addPrescriptionsToCart'])->name('addPrescriptionsToCart');
+    Route::get('/cart/{visit}/clear', [TransactionController::class, 'clearCart'])->name('clearCart');
+    Route::post('/store/{visit}', [TransactionController::class, 'store'])->name('store');
+    Route::get('/{transaction}', [TransactionController::class, 'show'])->name('show');
+    Route::get('/{transaction}/invoice', [TransactionController::class, 'invoice'])->name('invoice');
+});
+
+Route::post('/transactions/{transaction}/cancel', 
+    [TransactionController::class, 'cancel'])
+    ->name('transactions.cancel')
+    ->middleware('role:kasir');
+
+    Route::delete('/transactions/{transaction}', 
+    [TransactionController::class, 'destroy'])
+    ->name('transactions.destroy')
+    ->middleware('role:kasir');
+
+    Route::post(
+    '/transactions/{transaction}/confirm',
+    [TransactionController::class, 'confirm']
+)->name('transactions.confirm');
+
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | USER MANAGEMENT (ADMIN)
+    |--------------------------------------------------------------------------
+    */
     Route::middleware(['role:admin'])->group(function () {
         Route::resource('users', UserController::class);
         Route::put('/users/{user}/deactivate', [UserController::class, 'deactivate'])
             ->name('users.deactivate');
     });
 
-    // Report Routes
+
+    /*
+    |--------------------------------------------------------------------------
+    | REPORTS (ADMIN)
+    |--------------------------------------------------------------------------
+    */
     Route::get('/reports', [ReportController::class, 'index'])
         ->name('reports.index')->middleware('role:admin');
+
     Route::get('/reports/export/{type}', [ReportController::class, 'export'])
         ->name('reports.export')->middleware('role:admin');
 
-    // API Routes for AJAX calls
-    Route::prefix('api')->group(function () {
-        // Dashboard Stats
-        Route::get('/dashboard/admin-stats', [DashboardController::class, 'adminStats']);
-        Route::get('/dashboard/petugas-stats', [DashboardController::class, 'petugasStats']);
-        Route::get('/dashboard/dokter-stats', [DashboardController::class, 'dokterStats']);
-        Route::get('/dashboard/kasir-stats', [DashboardController::class, 'kasirStats']);
-        
-        // Doctor Availability
-        Route::post('/doctor/availability', [DashboardController::class, 'updateAvailability']);
-        Route::get('/doctor/schedule', [DashboardController::class, 'doctorSchedule']);
-        
-        // Patient Search (additional endpoints)
-        Route::get('/patients/list', [PatientController::class, 'list']);
-        Route::get('/patients/{patient}/visits/unpaid', [PatientController::class, 'unpaidVisits']);
-        
-        // Medicine Management
-        Route::get('/medicines/available', [DashboardController::class, 'availableMedicines']);
-        
-        // Transaction Processing
-        Route::get('/transactions/pending', [TransactionController::class, 'pendingTransactions']);
-        Route::post('/transactions/{transaction}/process', [TransactionController::class, 'processPayment']);
-        Route::post('/transactions/quick-pay', [TransactionController::class, 'quickPayment']);
-        
-        // Prescriptions
-        Route::post('/prescriptions/create', [DashboardController::class, 'createPrescription']);
-    });
 
-    // Home Redirect based on role
+    /*
+    |--------------------------------------------------------------------------
+    | HOME REDIRECT
+    |--------------------------------------------------------------------------
+    */
     Route::get('/', function () {
         $user = auth()->user();
 
-        switch ($user->role) {
-            case 'admin':
-                return redirect()->route('admin.dashboard');
-            case 'petugas':
-                return redirect()->route('petugas.dashboard');
-            case 'dokter':
-                return redirect()->route('dokter.dashboard');
-            case 'kasir':
-                return redirect()->route('kasir.dashboard');
-            default:
-                return redirect('/login');
-        }
+        return match ($user->role) {
+            'admin'   => redirect()->route('admin.dashboard'),
+            'petugas' => redirect()->route('visits.index'),
+            'dokter'  => redirect()->route('visits.index'),
+            'kasir'   => redirect()->route('transactions.index'),
+            default   => redirect('/login'),
+        };
     });
 });
+
+Route::get('/visits/search', function(Request $request) {
+    $query = $request->get('q');
+    
+    $visits = Visit::with(['patient', 'doctor'])
+        ->whereHas('patient', function($q) use ($query) {
+            $q->where('nama', 'like', '%' . $query . '%')
+              ->orWhere('no_rekam_medis', 'like', '%' . $query . '%');
+        })
+        ->whereDoesntHave('transaction') // Only visits without transactions
+        ->where('status', 'selesai') // Only completed visits
+        ->limit(10)
+        ->get()
+        ->map(function($visit) {
+            return [
+                'id' => $visit->id,
+                'patient_nama' => $visit->patient->nama,
+                'patient_no_rekam_medis' => $visit->patient->no_rekam_medis,
+                'doctor_name' => $visit->doctor->name,
+                'tanggal_kunjungan' => $visit->tanggal_kunjungan->format('d/m/Y'),
+                'status' => $visit->status,
+            ];
+        });
+    
+    return response()->json($visits);
+});
+
+// routes/web.php
+Route::resource('services', ServiceController::class)->except(['show']);
