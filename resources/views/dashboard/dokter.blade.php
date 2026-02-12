@@ -2,320 +2,64 @@
 
 @section('title', 'Dashboard Dokter')
 
-@section('content')
-<div class="dashboard-header mb-4">
-    <div class="d-flex justify-content-between align-items-center">
-        <div>
-            <h1 class="page-title">Dashboard Dokter</h1>
-            <p class="page-subtitle">Dr. {{ auth()->user()->name }} • {{ now()->format('l, d F Y') }}</p>
-        </div>
-        <div class="d-flex gap-2">
-            @php
-                $nextPatient = $todayVisits->where('status', 'menunggu')->first();
-            @endphp
-            @if($nextPatient)
-                <a href="{{ route('medical-records.create', $nextPatient) }}" class="btn btn-primary">
-                    <i class="fas fa-play me-2"></i>Mulai Pemeriksaan
-                </a>
-            @endif
-            <a href="{{ route('visits.index') }}" class="btn btn-outline-primary">
-                <i class="fas fa-list-ul me-2"></i>Lihat Antrian
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- Stats Overview -->
-<div class="row g-3 mb-4">
-    <div class="col-xl-3 col-md-6">
-        <div class="stat-card stat-card-waiting">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
-                <i class="fas fa-user-clock"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-label">Pasien Menunggu</div>
-                <div class="stat-value">{{ $stats['waitingPatients'] }}</div>
-                <div class="stat-meta">
-                    <span class="badge badge-soft-warning">
-                        <i class="fas fa-clock me-1"></i>Dalam Antrian
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6">
-        <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-                <i class="fas fa-stethoscope"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-label">Diperiksa Hari Ini</div>
-                <div class="stat-value">{{ $stats['completedToday'] }}</div>
-                <div class="stat-meta">
-                    <span class="badge badge-soft-success">
-                        <i class="fas fa-check-circle me-1"></i>Selesai
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6">
-        <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
-                <i class="fas fa-calendar-check"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-label">Total Kunjungan</div>
-                <div class="stat-value">{{ $stats['todayAppointments'] }}</div>
-                <div class="stat-meta">
-                    <span class="badge badge-soft-info">
-                        <i class="fas fa-calendar-alt me-1"></i>Hari Ini
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6">
-        <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
-                <i class="fas fa-file-medical"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-label">Rata-rata Rekam Medis</div>
-                <div class="stat-value">{{ $stats['avgRecords'] ?? '0' }}</div>
-                <div class="stat-meta">
-                    <span class="badge badge-soft-primary">
-                        <i class="fas fa-chart-line me-1"></i>Per Hari
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-3">
-    <!-- Today's Queue -->
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="mb-0">Antrian Hari Ini</h5>
-                    <small class="text-muted">{{ $todayVisits->count() }} pasien terdaftar</small>
-                </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="window.location.reload()">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                    <a href="{{ route('visits.create') }}" class="btn btn-sm btn-primary">
-                        <i class="fas fa-plus me-1"></i>Kunjungan Baru
-                    </a>
-                </div>
-            </div>
-            <div class="card-body p-0">
-                <div class="queue-list">
-                    @forelse($todayVisits as $visit)
-                    <div class="queue-item queue-status-{{ $visit->status }}">
-                        <div class="queue-number">
-                            @if($visit->nomor_antrian)
-                                <span class="badge {{ $visit->prioritas == 'prioritas' ? 'bg-danger' : 'bg-primary' }}">
-                                    {{ $visit->prefix_antrian ?? 'A' }}-{{ str_pad($visit->nomor_antrian, 3, '0', STR_PAD_LEFT) }}
-                                </span>
-                            @else
-                                <span class="badge bg-secondary">{{ $loop->iteration }}</span>
-                            @endif
-                        </div>
-                        
-                        <div class="queue-patient">
-                            <div class="patient-avatar">
-                                {{ substr($visit->patient->nama, 0, 1) }}
-                            </div>
-                            <div class="patient-info">
-                                <div class="patient-name">{{ $visit->patient->nama }}</div>
-                                <div class="patient-meta">
-                                    <span>{{ $visit->patient->no_rekam_medis }}</span>
-                                    <span>•</span>
-                                    <span>{{ $visit->patient->umur }} thn</span>
-                                    <span>•</span>
-                                    <span>{{ $visit->patient->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan' }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="queue-time">
-                            <small class="text-muted">
-                                <i class="fas fa-clock me-1"></i>{{ $visit->created_at->format('H:i') }}
-                            </small>
-                        </div>
-                        
-                        <div class="queue-status">
-                            <span class="badge badge-status-{{ $visit->status }}">
-                                {{ ucfirst($visit->status) }}
-                            </span>
-                        </div>
-                        
-                        <div class="queue-actions">
-                            <div class="btn-group">
-                                <a href="{{ route('patients.show', $visit->patient) }}" 
-                                   class="btn btn-sm btn-outline-secondary" 
-                                   title="Detail Pasien">
-                                    <i class="fas fa-user"></i>
-                                </a>
-                                
-                                @if($visit->status == 'menunggu')
-                                    <form action="{{ route('visits.updateStatus', $visit) }}" 
-                                          method="POST" class="d-inline">
-                                        @csrf
-                                        @method('PATCH')
-                                        <input type="hidden" name="status" value="diperiksa">
-                                        <button type="submit" class="btn btn-sm btn-success" title="Mulai Periksa">
-                                            <i class="fas fa-play"></i>
-                                        </button>
-                                    </form>
-                                @endif
-                                
-                                @if($visit->status == 'diperiksa')
-                                    <a href="{{ route('medical-records.create', $visit) }}" 
-                                       class="btn btn-sm btn-primary" title="Input Rekam Medis">
-                                        <i class="fas fa-file-medical"></i>
-                                    </a>
-                                @endif
-                                
-                                @if($visit->status == 'selesai' && $visit->medicalRecord)
-                                    <a href="{{ route('medical-records.show', $visit->medicalRecord->id) }}" 
-                                       class="btn btn-sm btn-info" title="Lihat Rekam Medis">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                    @empty
-                    <div class="empty-state">
-                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">Tidak ada kunjungan hari ini</h5>
-                        <p class="text-muted">Belum ada pasien yang terdaftar</p>
-                    </div>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Side Panel -->
-    <div class="col-lg-4">
-        <!-- Quick Panel -->
-        <div class="card mb-3">
-            <div class="card-header">
-                <h5 class="mb-0">Panel Cepat</h5>
-                <small class="text-muted">Aksi cepat dokter</small>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    @if($nextPatient)
-                        <a href="{{ route('medical-records.create', $nextPatient) }}" 
-                           class="btn btn-lg btn-primary">
-                            <i class="fas fa-play me-2"></i>Periksa Pasien Berikutnya
-                        </a>
-                        <div class="text-center mt-2">
-                            <small class="text-muted">
-                                {{ $nextPatient->patient->nama }} 
-                                @if($nextPatient->nomor_antrian)
-                                    ({{ $nextPatient->prefix_antrian ?? 'A' }}-{{ str_pad($nextPatient->nomor_antrian, 3, '0', STR_PAD_LEFT) }})
-                                @endif
-                            </small>
-                        </div>
-                    @else
-                        <button class="btn btn-lg btn-outline-secondary" disabled>
-                            <i class="fas fa-check me-2"></i>Semua Pasien Telah Dilayani
-                        </button>
-                    @endif
-                    
-                    <a href="{{ route('medicines.index') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-pills me-2"></i>Data Obat
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Recent Records -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Rekam Medis Terbaru</h5>
-                <small class="text-muted">Riwayat pemeriksaan</small>
-            </div>
-            <div class="card-body p-0">
-                <div class="recent-records-list">
-                    @forelse($recentRecords as $record)
-                    <div class="recent-record-item">
-                        <div class="record-icon">
-                            <i class="fas fa-file-medical-alt"></i>
-                        </div>
-                        <div class="record-info">
-                            <div class="record-patient">{{ $record->visit->patient->nama }}</div>
-                            <div class="record-diagnosis">{{ Str::limit($record->diagnosa, 40) }}</div>
-                            <div class="record-meta">
-                                <small class="text-muted">
-                                    <i class="fas fa-clock me-1"></i>{{ $record->created_at->diffForHumans() }}
-                                </small>
-                            </div>
-                        </div>
-                        <div class="record-action">
-                            <a href="{{ route('medical-records.show', $record->id) }}" 
-                               class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                        </div>
-                    </div>
-                    @empty
-                    <div class="empty-state-small">
-                        <i class="fas fa-file-medical fa-2x text-muted mb-2"></i>
-                        <p class="text-muted mb-0">Belum ada rekam medis</p>
-                    </div>
-                    @endforelse
-                </div>
-                
-                @if($recentRecords->count() > 0)
-                <div class="card-footer text-center">
-                    <a href="{{ route('medical-records.index') }}" class="text-primary">
-                        Lihat Semua <i class="fas fa-arrow-right ms-1"></i>
-                    </a>
-                </div>
-                @endif
-            </div>
-        </div>
-    </div>
-</div>
-@endsection
-
 @section('styles')
 <style>
-    .stat-card-waiting {
-        animation: pulse-warning 2s infinite;
+    /* Simplified Stat Cards */
+    .doctor-stat-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        height: 100%;
     }
     
-    @keyframes pulse-warning {
-        0%, 100% {
-            background: white;
-        }
-        50% {
-            background: rgba(251, 191, 36, 0.05);
-        }
+    .doctor-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
     }
     
-    /* Queue List */
-    .queue-list {
+    .stat-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
         display: flex;
-        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+        color: white;
+        font-size: 1.25rem;
     }
     
+    .stat-content {
+        flex: 1;
+    }
+    
+    .stat-label {
+        font-size: 12px;
+        color: var(--text-secondary);
+        font-weight: 500;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+        line-height: 1.2;
+    }
+    
+    /* Patient Queue */
     .queue-item {
         display: flex;
         align-items: center;
-        gap: 16px;
-        padding: 16px 24px;
+        gap: 12px;
+        padding: 16px;
         border-bottom: 1px solid var(--border-color);
         transition: all 0.2s ease;
     }
@@ -328,54 +72,34 @@
         border-bottom: none;
     }
     
-    .queue-status-menunggu {
-        border-left: 3px solid #fbbf24;
-    }
-    
-    .queue-status-diperiksa {
-        border-left: 3px solid #3b82f6;
-        background: rgba(59, 130, 246, 0.03);
-    }
-    
-    .queue-status-selesai {
-        border-left: 3px solid #10b981;
-        background: rgba(16, 185, 129, 0.03);
-    }
-    
-    .queue-number {
-        flex-shrink: 0;
-    }
-    
-    .queue-patient {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex: 1;
-        min-width: 0;
-    }
-    
-    .patient-avatar {
+    .queue-number-badge {
         width: 40px;
         height: 40px;
         border-radius: 10px;
-        background: linear-gradient(135deg, var(--primary-color) 0%, #8b5cf6 100%);
-        color: white;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 600;
-        font-size: 16px;
+        font-weight: 700;
+        color: white;
+        font-size: 14px;
         flex-shrink: 0;
     }
     
-    .patient-info {
-        min-width: 0;
+    .queue-number-primary {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #4f46e5 100%);
+    }
+    
+    .queue-number-danger {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    }
+    
+    .queue-patient-info {
         flex: 1;
+        min-width: 0;
     }
     
     .patient-name {
         font-weight: 600;
-        font-size: 15px;
         color: var(--text-primary);
         margin-bottom: 4px;
     }
@@ -384,43 +108,52 @@
         font-size: 12px;
         color: var(--text-secondary);
         display: flex;
-        gap: 6px;
+        gap: 8px;
         flex-wrap: wrap;
-    }
-    
-    .queue-time {
-        flex-shrink: 0;
     }
     
     .queue-status {
         flex-shrink: 0;
-        min-width: 90px;
     }
     
-    .queue-actions {
+    .queue-action {
         flex-shrink: 0;
     }
     
-    /* Recent Records */
-    .recent-records-list {
-        display: flex;
-        flex-direction: column;
+    /* Status Colors */
+    .status-waiting {
+        background-color: rgba(251, 191, 36, 0.1);
+        color: #92400e;
+        border-left: 4px solid #fbbf24;
     }
     
-    .recent-record-item {
+    .status-examining {
+        background-color: rgba(59, 130, 246, 0.1);
+        color: #1e40af;
+        border-left: 4px solid #3b82f6;
+    }
+    
+    .status-completed {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #065f46;
+        border-left: 4px solid #10b981;
+    }
+    
+    /* Medical Records */
+    .record-item {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         gap: 12px;
-        padding: 16px 20px;
+        padding: 14px 16px;
         border-bottom: 1px solid var(--border-color);
         transition: all 0.2s ease;
     }
     
-    .recent-record-item:hover {
+    .record-item:hover {
         background: var(--background);
     }
     
-    .recent-record-item:last-child {
+    .record-item:last-child {
         border-bottom: none;
     }
     
@@ -443,23 +176,42 @@
     
     .record-patient {
         font-weight: 600;
-        font-size: 14px;
+        font-size: 13px;
         color: var(--text-primary);
-        margin-bottom: 4px;
+        margin-bottom: 2px;
     }
     
     .record-diagnosis {
-        font-size: 13px;
-        color: var(--text-secondary);
-        margin-bottom: 4px;
-    }
-    
-    .record-meta {
         font-size: 12px;
+        color: var(--text-secondary);
+        margin-bottom: 2px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
     
-    .record-action {
-        flex-shrink: 0;
+    .record-time {
+        font-size: 11px;
+        color: var(--text-secondary);
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+    }
+    
+    .main-action {
+        flex: 2;
+        min-width: 200px;
+    }
+    
+    .secondary-action {
+        flex: 1;
+        min-width: 120px;
     }
     
     /* Empty States */
@@ -468,30 +220,350 @@
         text-align: center;
     }
     
-    .empty-state-small {
-        padding: 40px 20px;
+    .empty-state-icon {
+        font-size: 2.5rem;
+        color: var(--border-color);
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+    
+    .empty-state-text {
+        color: var(--text-secondary);
+        margin: 0;
+    }
+    
+    /* Quick Actions */
+    .quick-action-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .quick-action-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 20px 12px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .quick-action-btn:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .quick-action-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 14px;
+    }
+    
+    .quick-action-label {
+        font-weight: 500;
+        color: var(--text-primary);
+        font-size: 11px;
         text-align: center;
     }
     
+    /* Mobile Optimizations */
     @media (max-width: 768px) {
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .main-action, .secondary-action {
+            width: 100%;
+        }
+        
         .queue-item {
             flex-wrap: wrap;
         }
         
-        .queue-actions {
+        .queue-status {
             width: 100%;
             margin-top: 8px;
         }
         
-        .queue-actions .btn-group {
+        .queue-action {
             width: 100%;
+            margin-top: 8px;
         }
         
-        .queue-actions .btn-group .btn {
-            flex: 1;
+        .quick-action-grid {
+            grid-template-columns: repeat(2, 1fr);
         }
     }
 </style>
+@endsection
+
+@section('content')
+<div class="row">
+    <div class="col-12">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title mb-1">Dashboard Dokter</h1>
+                <p class="page-subtitle">Dr. {{ auth()->user()->name }} • {{ now()->translatedFormat('l, d F Y') }}</p>
+            </div>
+            <a href="{{ route('visits.index') }}" class="btn btn-outline-primary">
+                <i class="fas fa-list-ul me-2"></i>Lihat Antrian
+            </a>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            @php
+                $nextPatient = $todayVisits->where('status', 'menunggu')->first();
+            @endphp
+            
+            @if($nextPatient)
+                <a href="{{ route('medical-records.create', $nextPatient) }}" 
+                   class="btn btn-primary main-action">
+                    <i class="fas fa-play me-2"></i>Mulai Pemeriksaan Pasien
+                </a>
+            @else
+                <button class="btn btn-success main-action" disabled>
+                    <i class="fas fa-check me-2"></i>Semua Pasien Selesai
+                </button>
+            @endif
+            
+            <a href="{{ route('visits.create') }}" class="btn btn-outline-primary secondary-action">
+                <i class="fas fa-plus me-2"></i>Kunjungan Baru
+            </a>
+            
+            {{-- <a href="{{ route('patients.create') }}" class="btn btn-outline-secondary secondary-action">
+                <i class="fas fa-user-plus me-2"></i>Pasien Baru
+            </a> --}}
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="doctor-stat-card">
+                    <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);">
+                        <i class="fas fa-user-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Menunggu</div>
+                        <div class="stat-value">{{ $stats['waitingPatients'] }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="doctor-stat-card">
+                    <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                        <i class="fas fa-stethoscope"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Selesai Hari Ini</div>
+                        <div class="stat-value">{{ $stats['completedToday'] }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="doctor-stat-card">
+                    <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Total Kunjungan</div>
+                        <div class="stat-value">{{ $stats['todayAppointments'] }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="doctor-stat-card">
+                    <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+                        <i class="fas fa-file-medical"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Rata-rata Rekam</div>
+                        <div class="stat-value">{{ $stats['avgRecords'] ?? '0' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="row g-3">
+            <!-- Patient Queue -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">Antrian Pasien Hari Ini</h5>
+                            <small class="text-muted">{{ $todayVisits->count() }} pasien terdaftar</small>
+                        </div>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="window.location.reload()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        @if($todayVisits->count() > 0)
+                            @foreach($todayVisits as $visit)
+                            <div class="queue-item status-{{ $visit->status }}">
+                                <div class="queue-number-badge {{ $visit->prioritas == 'prioritas' ? 'queue-number-danger' : 'queue-number-primary' }}">
+                                    @if($visit->nomor_antrian)
+                                        {{ $visit->prefix_antrian ?? 'A' }}-{{ str_pad($visit->nomor_antrian, 3, '0', STR_PAD_LEFT) }}
+                                    @else
+                                        {{ $loop->iteration }}
+                                    @endif
+                                </div>
+                                
+                                <div class="queue-patient-info">
+                                    <div class="patient-name">{{ $visit->patient->nama }}</div>
+                                    <div class="patient-meta">
+                                        <span>{{ $visit->patient->no_rekam_medis }}</span>
+                                        <span>•</span>
+                                        <span>{{ $visit->patient->umur }} tahun</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="queue-status">
+                                    <span class="badge badge-status-{{ $visit->status }}">
+                                        {{ ucfirst($visit->status) }}
+                                    </span>
+                                </div>
+                                
+                                <div class="queue-action">
+                                    @if($visit->status == 'menunggu')
+                                        <form action="{{ route('visits.updateStatus', $visit) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="status" value="diperiksa">
+                                            <button type="submit" class="btn btn-sm btn-success" title="Mulai Pemeriksaan">
+                                                <i class="fas fa-play"></i>
+                                            </button>
+                                        </form>
+                                    @elseif($visit->status == 'diperiksa')
+                                        <a href="{{ route('medical-records.create', $visit) }}" 
+                                           class="btn btn-sm btn-primary" title="Input Rekam Medis">
+                                            <i class="fas fa-file-medical"></i>
+                                        </a>
+                                    @else
+                                        {{-- <a href="{{ route('patients.show', $visit->patient) }}" 
+                                           class="btn btn-sm btn-outline-secondary" title="Lihat Pasien">
+                                            <i class="fas fa-eye"></i>
+                                        </a> --}}
+                                    @endif
+                                </div>
+                            </div>
+                            @endforeach
+                        @else
+                            <div class="empty-state">
+                                <i class="fas fa-calendar-times empty-state-icon"></i>
+                                <p class="empty-state-text">Tidak ada kunjungan hari ini</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Side Panel -->
+            <div class="col-lg-4">
+                <!-- Quick Actions -->
+                {{-- <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">Aksi Cepat</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="quick-action-grid">
+                            <a href="{{ route('medicines.index') }}" class="quick-action-btn">
+                                <div class="quick-action-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+                                    <i class="fas fa-pills"></i>
+                                </div>
+                                <span class="quick-action-label">Data Obat</span>
+                            </a>
+                            
+                            <a href="{{ route('medical-records.index') }}" class="quick-action-btn">
+                                <div class="quick-action-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                                    <i class="fas fa-file-medical-alt"></i>
+                                </div>
+                                <span class="quick-action-label">Rekam Medis</span>
+                            </a>
+                            
+                            <a href="{{ route('patients.index') }}" class="quick-action-btn">
+                                <div class="quick-action-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
+                                    <i class="fas fa-user-injured"></i>
+                                </div>
+                                <span class="quick-action-label">Data Pasien</span>
+                            </a>
+                            
+                            <a href="{{ route('reports.index', ['type' => 'visits']) }}" class="quick-action-btn">
+                                <div class="quick-action-icon" style="background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);">
+                                    <i class="fas fa-chart-bar"></i>
+                                </div>
+                                <span class="quick-action-label">Laporan</span>
+                            </a>
+                        </div>
+                        
+                        @if($nextPatient)
+                        <div class="text-center mt-2">
+                            <small class="text-muted">
+                                Pasien berikutnya: <strong>{{ $nextPatient->patient->nama }}</strong>
+                            </small>
+                        </div>
+                        @endif
+                    </div>
+                </div> --}}
+
+                <!-- Recent Medical Records -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Rekam Medis Terbaru</h5>
+                        <small class="text-muted">Riwayat pemeriksaan</small>
+                    </div>
+                    <div class="card-body p-0">
+                        @if($recentRecords->count() > 0)
+                            @foreach($recentRecords as $record)
+                            <div class="record-item">
+                                <div class="record-icon">
+                                    <i class="fas fa-file-medical-alt"></i>
+                                </div>
+                                <div class="record-info">
+                                    <div class="record-patient">{{ $record->visit->patient->nama }}</div>
+                                    <div class="record-diagnosis">{{ Str::limit($record->diagnosa, 40) }}</div>
+                                    <div class="record-time">{{ $record->created_at->diffForHumans() }}</div>
+                                </div>
+                                <a href="{{ route('medical-records.show', $record->id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                            @endforeach
+                            
+                            <div class="text-center p-3">
+                                <a href="{{ route('medical-records.index') }}" class="text-primary">
+                                    Lihat Semua <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        @else
+                            <div class="empty-state">
+                                <i class="fas fa-file-medical empty-state-icon"></i>
+                                <p class="empty-state-text">Belum ada rekam medis</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('scripts')

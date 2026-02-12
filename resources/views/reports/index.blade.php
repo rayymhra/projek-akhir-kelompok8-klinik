@@ -497,7 +497,7 @@
                        class="btn btn-outline-secondary btn-sm">
                         <i class="fas fa-redo"></i>
                     </a>
-                    @if(!empty($filter['start_date']) && !empty($filter['end_date']))
+                    {{-- @if(!empty($filter['start_date']) && !empty($filter['end_date']))
                     <a href="{{ route('reports.export', [
                         'type' => $filter['type'] ?? 'visits',
                         'start_date' => $filter['start_date'] ?? null,
@@ -506,7 +506,14 @@
                     ]) }}" class="btn btn-success btn-sm export-btn" target="_blank">
                         <i class="fas fa-file-export me-1"></i> Export
                     </a>
-                    @endif
+                    @endif --}}
+                     @if(!empty($filter['start_date']) && !empty($filter['end_date']))
+        <a href="{{ route('reports.print', request()->query()) }}"
+           target="_blank"
+           class="btn btn-danger btn-sm">
+            <i class="fas fa-print me-1"></i> Cetak PDF
+        </a>
+    @endif
                 </div>
             </form>
         </div>

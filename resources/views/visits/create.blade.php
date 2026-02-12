@@ -228,11 +228,11 @@
                         </div>
                         
                         <!-- Notes -->
-                        <div class="col-12 mb-3">
+                        {{-- <div class="col-12 mb-3">
                             <label for="catatan" class="form-label">Catatan Tambahan (Opsional)</label>
                             <textarea class="form-control" id="catatan" name="catatan" rows="2" 
                                       placeholder="Catatan tambahan untuk kunjungan ini...">{{ old('catatan') }}</textarea>
-                        </div>
+                        </div> --}}
                     </div>
                     
                     <!-- Form Actions -->

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 
+
 class ReportController extends Controller
 {
     public function index(Request $request)
@@ -267,4 +268,65 @@ class ReportController extends Controller
             'pending_transactions' => Transaction::where('status', 'menunggu')->count(),
         ];
     }
+
+  public function print(Request $request)
+{
+    $filter = $request->only(['start_date', 'end_date', 'type', 'doctor_id']);
+
+    // Default date
+    if (!$request->has('start_date')) {
+        $filter['start_date'] = now()->startOfMonth()->format('Y-m-d');
+        $filter['end_date']   = now()->endOfMonth()->format('Y-m-d');
+    }
+
+    switch ($request->get('type', 'visits')) {
+        case 'visits':
+            $report = $this->getVisitReport($filter);
+            $view = 'reports.print-visits';
+            break;
+        case 'transactions':
+            $report = $this->getTransactionReport($filter);
+            $view = 'reports.print-transactions';
+            break;
+        case 'patients':
+            $report = $this->getPatientReport($filter);
+            $view = 'reports.print-patients';
+            break;
+        case 'medicines':
+            $report = $this->getMedicineReport($filter);
+            $view = 'reports.print-medicines';
+            break;
+        case 'income':
+            $report = $this->getIncomeReport($filter);
+            $view = 'reports.print-income';
+            break;
+        default:
+            abort(404);
+    }
+
+    // Add clinic info and filter to report
+    $report['clinic_info'] = [
+    'name'    => 'Klinik Prima Medika',
+    'address' => 'Jl. Raya Cileungsi No. 88, Cileungsi, Kabupaten Bogor, Jawa Barat',
+    'phone'   => '(021) 8249-5566',
+    'email'   => 'info@primamedika.com'
+];
+
+    
+    $report['filter'] = $filter;
+    $report['print_date'] = now()->format('d/m/Y H:i');
+
+    $pdf = Pdf::loadView($view, $report)
+        ->setPaper('A4', 'portrait')
+        ->setOptions([
+            'defaultFont' => 'sans-serif',
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => true,
+        ]);
+
+    $filename = 'laporan-' . $report['type'] . '-' . date('Y-m-d') . '.pdf';
+    
+    return $pdf->stream($filename);
+}
+
 }

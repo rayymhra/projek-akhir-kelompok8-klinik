@@ -472,6 +472,17 @@
                         </li>
                     @endif
 
+                    @if(auth()->user()->role == 'petugas')
+    <li class="nav-section-title">Petugas Pendaftaran</li>
+    <li class="nav-item">
+        <a class="nav-link {{ Request::is('dashboard/petugas') ? 'active' : '' }}"
+            href="{{ route('petugas.dashboard') }}">
+            <i class="fas fa-clipboard-list"></i> Dashboard
+        </a>
+    </li>
+@endif
+
+
                     @if(in_array(auth()->user()->role, ['admin', 'petugas']))
                         <li class="nav-section-title">Manajemen</li>
                         <li class="nav-item">
@@ -511,14 +522,25 @@
                     @endif
 
                     @if(auth()->user()->role == 'kasir')
-                        <li class="nav-section-title">Kasir</li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('transactions*') ? 'active' : '' }}"
-                                href="{{ route('transactions.index') }}">
-                                <i class="fas fa-cash-register"></i> Transaksi
-                            </a>
-                        </li>
-                    @endif
+    <li class="nav-section-title">Kasir</li>
+
+    {{-- Dashboard Kasir --}}
+    <li class="nav-item">
+        <a class="nav-link {{ Request::is('kasir/dashboard') ? 'active' : '' }}"
+            href="{{ route('kasir.dashboard') }}">
+            <i class="fas fa-chart-pie"></i> Dashboard
+        </a>
+    </li>
+
+    {{-- Transaksi --}}
+    <li class="nav-item">
+        <a class="nav-link {{ Request::is('transactions*') ? 'active' : '' }}"
+            href="{{ route('transactions.index') }}">
+            <i class="fas fa-cash-register"></i> Transaksi
+        </a>
+    </li>
+@endif
+
 
                     @if(in_array(auth()->user()->role, ['admin', 'dokter']))
                         <li class="nav-section-title">Inventory</li>

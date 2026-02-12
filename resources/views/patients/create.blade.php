@@ -242,7 +242,7 @@
 </div>
 
 <!-- Notes -->
-<div class="row mb-3">
+{{-- <div class="row mb-3">
     <div class="col-12">
         <label for="catatan" class="form-label">Catatan Tambahan</label>
         <textarea class="form-control @error('catatan') is-invalid @enderror" 
@@ -251,7 +251,7 @@
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
     </div>
-</div>
+</div> --}}
                     
                     <div class="row">
                         <div class="col-md-6">

@@ -230,9 +230,9 @@
                     <a href="{{ route('patients.index') }}" class="btn btn-info btn-lg">
                         <i class="fas fa-search me-2"></i>Cari Pasien
                     </a>
-                    <button class="btn btn-warning btn-lg" data-bs-toggle="modal" data-bs-target="#printQueueModal">
+                    {{-- <button class="btn btn-warning btn-lg" data-bs-toggle="modal" data-bs-target="#printQueueModal">
                         <i class="fas fa-print me-2"></i>Cetak Antrian
-                    </button>
+                    </button> --}}
                 </div>
                 
                 <!-- Pencarian Cepat -->
@@ -376,7 +376,7 @@
                 <form id="printQueueForm">
                     @csrf
                     <div class="mb-3">
-                        <label class="form-label">Pilih Dokter</label>
+                        <label class="form-label">Pilih Dokter <span class="text-danger">*</span></label>
                         <select class="form-select" id="doctorSelect" required>
                             <option value="">Pilih Dokter...</option>
                             @foreach($stats['doctors'] as $doctor)
@@ -384,44 +384,71 @@
                             @endforeach
                         </select>
                     </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Poliklinik <span class="text-danger">*</span></label>
+                        <select class="form-select" id="poliSelect" required>
+                            <option value="">Pilih Poliklinik...</option>
+                            @foreach($stats['poliklinik'] as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    
                     <div class="mb-3">
                         <label class="form-label">Prioritas</label>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="priorityCheck">
+                            <input class="form-check-input" type="checkbox" id="priorityCheck" value="prioritas">
                             <label class="form-check-label" for="priorityCheck">
-                                Antrian Prioritas (Lansia/Hamil/Disabilitas)
+                                <i class="fas fa-exclamation-triangle text-danger me-1"></i>
+                                Antrian Prioritas (Lansia/Hamil/Disabilitas/Darurat)
                             </label>
                         </div>
                     </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Pasien Terdaftar (Opsional)</label>
+                        <select class="form-select" id="patientSelect">
+                            <option value="">Pilih Pasien Terdaftar...</option>
+                            <!-- Will be populated via AJAX -->
+                        </select>
+                        <div class="form-text">Kosongkan untuk pasien umum/walk-in</div>
+                    </div>
+                    
                     <div class="mb-3">
                         <label class="form-label">Catatan (Opsional)</label>
-                        <textarea class="form-control" id="queueNote" rows="2"></textarea>
+                        <textarea class="form-control" id="queueNote" rows="2" placeholder="Catatan tambahan..."></textarea>
                     </div>
                 </form>
+                
+                <!-- Queue Preview -->
                 <div id="queuePreview" class="d-none mt-3">
                     <div class="card">
                         <div class="card-body text-center">
                             <h4 class="text-primary">KLINIK PRIMA MEDIKA</h4>
                             <h1 class="display-1 text-danger" id="previewQueueNumber">A001</h1>
                             <h5 id="previewDoctorName">Dr. Andi Wijaya</h5>
+                            <h6 id="previewPoli" class="text-info">Poliklinik Umum</h6>
                             <p class="text-muted" id="previewDateTime">{{ now()->format('d/m/Y H:i') }}</p>
                             <small id="previewPriorityNote" class="text-danger d-none">ANTRIAN PRIORITAS</small>
+                            <div id="previewPatientInfo" class="mt-2"></div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary" onclick="generateQueueNumber()">
-                    <i class="fas fa-barcode me-2"></i>Generate
+                <button type="button" class="btn btn-primary" onclick="generateQueueNumber()" id="generateBtn">
+                    <i class="fas fa-barcode me-2"></i>Generate Antrian
                 </button>
                 <button type="button" class="btn btn-success d-none" id="printButton" onclick="printQueue()">
-                    <i class="fas fa-print me-2"></i>Cetak
+                    <i class="fas fa-print me-2"></i>Cetak Tiket
                 </button>
             </div>
         </div>
     </div>
 </div>
+
 @endsection
 
 @section('styles')
@@ -461,6 +488,187 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Auto-refresh antrian setiap 30 detik
         let autoRefresh = setInterval(refreshQueue, 30000);
+         loadPatients();
+          document.getElementById('doctorSelect').addEventListener('change', updateQueuePreview);
+        document.getElementById('poliSelect').addEventListener('change', updateQueuePreview);
+        document.getElementById('priorityCheck').addEventListener('change', updateQueuePreview);
+        document.getElementById('patientSelect').addEventListener('change', updateQueuePreview);
+        function loadPatients() {
+            fetch('/api/patients/list?limit=50')
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('patientSelect');
+                    select.innerHTML = '<option value="">Pilih Pasien Terdaftar...</option>';
+                    
+                    data.forEach(patient => {
+                        const option = document.createElement('option');
+                        option.value = patient.id;
+                        option.textContent = `${patient.nama} (${patient.no_rekam_medis})`;
+                        option.setAttribute('data-patient', JSON.stringify(patient));
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error loading patients:', error));
+        }
+        
+        function updateQueuePreview() {
+            const doctorSelect = document.getElementById('doctorSelect');
+            const poliSelect = document.getElementById('poliSelect');
+            const priorityCheck = document.getElementById('priorityCheck');
+            const patientSelect = document.getElementById('patientSelect');
+            const preview = document.getElementById('queuePreview');
+            
+            if (doctorSelect.value && poliSelect.value) {
+                preview.classList.remove('d-none');
+                
+                // Update preview info
+                document.getElementById('previewDoctorName').textContent = 
+                    doctorSelect.options[doctorSelect.selectedIndex].text;
+                document.getElementById('previewPoli').textContent = 
+                    poliSelect.options[poliSelect.selectedIndex].text;
+                
+                // Update priority note
+                const priorityNote = document.getElementById('previewPriorityNote');
+                if (priorityCheck.checked) {
+                    priorityNote.classList.remove('d-none');
+                    document.getElementById('previewQueueNumber').textContent = 'P001';
+                } else {
+                    priorityNote.classList.add('d-none');
+                    document.getElementById('previewQueueNumber').textContent = 'A001';
+                }
+                
+                // Update patient info
+                const patientInfo = document.getElementById('previewPatientInfo');
+                if (patientSelect.value) {
+                    const selectedOption = patientSelect.options[patientSelect.selectedIndex];
+                    const patient = JSON.parse(selectedOption.getAttribute('data-patient'));
+                    patientInfo.innerHTML = `
+                        <div class="alert alert-info py-1 mt-2">
+                            <small>
+                                <i class="fas fa-user me-1"></i>
+                                ${patient.nama} (${patient.no_rekam_medis})
+                            </small>
+                        </div>
+                    `;
+                } else {
+                    patientInfo.innerHTML = `
+                        <div class="alert alert-warning py-1 mt-2">
+                            <small>
+                                <i class="fas fa-user-plus me-1"></i>
+                                PASIEN UMUM (WALK-IN)
+                            </small>
+                        </div>
+                    `;
+                }
+                
+            } else {
+                preview.classList.add('d-none');
+            }
+        }
+        
+        function generateQueueNumber() {
+            const doctorId = document.getElementById('doctorSelect').value;
+            const poli = document.getElementById('poliSelect').value;
+            const isPriority = document.getElementById('priorityCheck').checked;
+            const patientId = document.getElementById('patientSelect').value;
+            const note = document.getElementById('queueNote').value;
+            
+            if (!doctorId || !poli) {
+                showNotification('Pilih dokter dan poliklinik terlebih dahulu', 'error');
+                return;
+            }
+            
+            // Show loading
+            const generateBtn = document.getElementById('generateBtn');
+            const originalText = generateBtn.innerHTML;
+            generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
+            generateBtn.disabled = true;
+            
+            fetch('/api/queue/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    doctor_id: doctorId,
+                    poli: poli,
+                    priority: isPriority ? 'prioritas' : 'normal',
+                    patient_id: patientId || null,
+                    note: note
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update preview with actual queue number
+                    document.getElementById('previewQueueNumber').textContent = data.queue_number;
+                    document.getElementById('previewDateTime').textContent = new Date().toLocaleString('id-ID', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    // Show print button and store print URL
+                    const printBtn = document.getElementById('printButton');
+                    printBtn.classList.remove('d-none');
+                    printBtn.setAttribute('data-print-url', data.print_url);
+                    
+                    showNotification(`Nomor antrian berhasil digenerate: ${data.queue_number}`, 'success');
+                    
+                    // Refresh queue display
+                    refreshQueue();
+                    
+                    // Reset form after 5 seconds
+                    setTimeout(() => {
+                        resetQueueForm();
+                    }, 5000);
+                    
+                } else {
+                    showNotification('Gagal generate antrian: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error generating queue:', error);
+                showNotification('Terjadi kesalahan: ' + error.message, 'error');
+            })
+            .finally(() => {
+                // Restore button
+                generateBtn.innerHTML = originalText;
+                generateBtn.disabled = false;
+            });
+        }
+        
+        function resetQueueForm() {
+            document.getElementById('doctorSelect').value = '';
+            document.getElementById('poliSelect').value = '';
+            document.getElementById('priorityCheck').checked = false;
+            document.getElementById('patientSelect').value = '';
+            document.getElementById('queueNote').value = '';
+            document.getElementById('queuePreview').classList.add('d-none');
+            document.getElementById('printButton').classList.add('d-none');
+        }
+        
+        function printQueue() {
+            const printUrl = document.getElementById('printButton').getAttribute('data-print-url');
+            
+            if (!printUrl) {
+                showNotification('URL cetak tidak ditemukan', 'error');
+                return;
+            }
+            
+            // Open print window
+            const printWindow = window.open(printUrl, '_blank', 'width=800,height=600');
+            
+            if (!printWindow) {
+                showNotification('Izinkan popup untuk membuka jendela cetak', 'warning');
+                
+                // Alternative: redirect to print page
+                window.location.href = printUrl;
+            }
+        }
         
         // Quick search functionality
         const quickSearchInput = document.getElementById('quickSearchInput');

@@ -78,24 +78,332 @@
     }
     
     /* Action buttons styling */
-    .action-btn-group {
+     /* Main action group container */
+    .action-group {
         display: flex;
-        gap: 6px;
+        align-items: center;
+        gap: 8px;
         flex-wrap: wrap;
     }
     
+    /* Base action button style */
     .action-btn {
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
+        position: relative;
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        padding: 8px 12px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+        gap: 6px;
+        min-width: 36px;
+        background: white;
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+    }
+    
+    .action-btn i {
+        font-size: 14px;
         transition: all 0.2s ease;
     }
     
     .action-btn:hover {
-        transform: scale(1.1);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+        border-color: transparent;
+    }
+    
+    .action-btn:active {
+        transform: translateY(0px);
+    }
+    
+    /* Status action buttons */
+    .btn-status-waiting {
+        background: linear-gradient(145deg, #fff7e6, #ffe8cc);
+        color: #b45f06;
+        border-color: #ffd7a5;
+    }
+    
+    .btn-status-waiting:hover {
+        background: linear-gradient(145deg, #ffedd5, #ffe4bc);
+        color: #8a4c04;
+    }
+    
+    .btn-status-examining {
+        background: linear-gradient(145deg, #e6f3ff, #d4e9ff);
+        color: #1a5fa6;
+        border-color: #b8d6ff;
+    }
+    
+    .btn-status-examining:hover {
+        background: linear-gradient(145deg, #d4e9ff, #c2deff);
+        color: #0f4880;
+    }
+    
+    .btn-status-completed {
+        background: linear-gradient(145deg, #e6f7e6, #d4f0d4);
+        color: #1e6f3c;
+        border-color: #b2e0b2;
+    }
+    
+    .btn-status-completed:hover {
+        background: linear-gradient(145deg, #d4f0d4, #c2e8c2);
+        color: #155a2b;
+    }
+    
+    /* Icon-only button (for compact mode) */
+    .action-btn-icon {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        border-radius: 10px;
+    }
+    
+    .action-btn-icon i {
+        font-size: 16px;
+    }
+    
+    /* Action button with label */
+    .action-btn-label {
+        padding: 8px 16px;
+    }
+    
+    /* Dropdown toggle enhancement */
+    .action-dropdown {
+        padding: 8px 12px;
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+    }
+    
+    .action-dropdown:hover {
+        background: #f8fafc;
+    }
+    
+    .action-dropdown::after {
+        margin-left: 8px;
+        transition: transform 0.2s ease;
+    }
+    
+    .action-dropdown.show::after {
+        transform: rotate(180deg);
+    }
+    
+    /* Quick action pills */
+    .quick-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 12px;
+        font-weight: 500;
+        gap: 8px;
+        transition: all 0.2s ease;
+        color: white;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .quick-pill i {
+        font-size: 13px;
+    }
+    
+    .quick-pill-waiting {
+        background: linear-gradient(145deg, #f59e0b, #d97706);
+    }
+    
+    .quick-pill-examining {
+        background: linear-gradient(145deg, #3b82f6, #2563eb);
+    }
+    
+    .quick-pill-completed {
+        background: linear-gradient(145deg, #10b981, #059669);
+    }
+    
+    .quick-pill:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        color: white;
+    }
+    
+    /* Segmented buttons group */
+    .segmented-group {
+        display: inline-flex;
+        background: #f1f5f9;
+        border-radius: 12px;
+        padding: 3px;
+    }
+    
+    .segmented-btn {
+        padding: 6px 14px;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 500;
+        border: none;
+        background: transparent;
+        color: #64748b;
+        transition: all 0.2s ease;
+    }
+    
+    .segmented-btn.active {
+        background: white;
+        color: #0f172a;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    }
+    
+    .segmented-btn i {
+        margin-right: 6px;
+        font-size: 12px;
+    }
+    
+    /* Floating action button */
+    .fab-action {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        background: linear-gradient(145deg, #4f46e5, #4338ca);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+        transition: all 0.3s ease;
+        border: none;
+        z-index: 1000;
+    }
+    
+    .fab-action:hover {
+        transform: scale(1.1) rotate(90deg);
+        background: linear-gradient(145deg, #4338ca, #3730a3);
+        box-shadow: 0 12px 28px rgba(79, 70, 229, 0.4);
+        color: white;
+    }
+    
+    /* Status badge update */
+    .badge-status {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        gap: 8px;
+    }
+    
+    .badge-status i {
+        font-size: 10px;
+    }
+    
+    .badge-status-waiting {
+        background: linear-gradient(145deg, #fff3e0, #ffe8cc);
+        color: #b45f06;
+    }
+    
+    .badge-status-examining {
+        background: linear-gradient(145deg, #e3f2fd, #d4e9ff);
+        color: #1a5fa6;
+    }
+    
+    .badge-status-completed {
+        background: linear-gradient(145deg, #e8f5e9, #d4f0d4);
+        color: #1e6f3c;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .action-group {
+            gap: 4px;
+        }
+        
+        .action-btn {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+        
+        .action-btn-icon {
+            width: 34px;
+            height: 34px;
+        }
+        
+        .btn-label {
+            display: none;
+        }
+        
+        .segmented-btn span {
+            display: none;
+        }
+        
+        .segmented-btn i {
+            margin-right: 0;
+            font-size: 14px;
+        }
+    }
+    
+    /* Loading state */
+    .action-btn.loading {
+        pointer-events: none;
+        opacity: 0.7;
+    }
+    
+    .action-btn.loading i {
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Success animation */
+    @keyframes successPulse {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    
+    .action-btn-success {
+        animation: successPulse 0.5s ease;
+    }
+    
+    /* Tooltip enhancement */
+    [data-tooltip] {
+        position: relative;
+        cursor: pointer;
+    }
+    
+    [data-tooltip]:before {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 120%;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 6px 12px;
+        background: #1e293b;
+        color: white;
+        font-size: 11px;
+        font-weight: 500;
+        border-radius: 8px;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        pointer-events: none;
+        z-index: 1000;
+    }
+    
+    [data-tooltip]:hover:before {
+        opacity: 1;
+        visibility: visible;
+        bottom: 130%;
     }
     
     /* Table improvements */
@@ -358,45 +666,87 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <div class="action-btn-group justify-content-center">
-                                            <a href="{{ route('patients.show', $visit->patient) }}" 
-                                               class="action-btn btn btn-sm btn-light" 
-                                               data-bs-toggle="tooltip" 
-                                               title="Detail Pasien">
-                                                <i class="fas fa-user text-info"></i>
-                                            </a>
-                                            
-                                            @if($visit->status == 'menunggu')
-                                            <form action="{{ route('visits.updateStatus', $visit) }}" 
-                                                  method="POST" class="d-inline">
-                                                @csrf
-                                                @method('PATCH')
-                                                <input type="hidden" name="status" value="diperiksa">
-                                                <button type="submit" 
-                                                        class="action-btn btn btn-sm btn-primary"
-                                                        data-bs-toggle="tooltip" 
-                                                        title="Mulai Pemeriksaan">
-                                                    <i class="fas fa-play"></i>
-                                                </button>
-                                            </form>
-                                            @endif
-                                            
-                                            @if($visit->status == 'diperiksa')
-                                            <form action="{{ route('visits.updateStatus', $visit) }}" 
-                                                  method="POST" class="d-inline">
-                                                @csrf
-                                                @method('PATCH')
-                                                <input type="hidden" name="status" value="selesai">
-                                                <button type="submit" 
-                                                        class="action-btn btn btn-sm btn-success"
-                                                        data-bs-toggle="tooltip" 
-                                                        title="Selesaikan">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                            </form>
-                                            @endif
-                                        </div>
-                                    </td>
+    <div class="action-group">
+        <!-- Detail Patient Button -->
+        <a href="{{ route('patients.show', $visit->patient) }}" 
+           class="action-btn action-btn-icon" 
+           data-tooltip="Detail Pasien">
+            <i class="fas fa-user text-primary"></i>
+        </a>
+        
+        @if($visit->status == 'menunggu')
+        <!-- Start Examination Button -->
+        <form action="{{ route('visits.updateStatus', $visit) }}" method="POST" class="d-inline">
+            @csrf @method('PATCH')
+            <input type="hidden" name="status" value="diperiksa">
+            <button type="submit" 
+                    class="quick-pill quick-pill-examining"
+                    data-tooltip="Mulai Pemeriksaan">
+                <i class="fas fa-play"></i>
+                <span>Mulai</span>
+            </button>
+        </form>
+        @endif
+        
+        @if($visit->status == 'diperiksa')
+        <!-- Complete Examination Button -->
+        <form action="{{ route('visits.updateStatus', $visit) }}" method="POST" class="d-inline">
+            @csrf @method('PATCH')
+            <input type="hidden" name="status" value="selesai">
+            <button type="submit" 
+                    class="quick-pill quick-pill-completed"
+                    data-tooltip="Selesaikan Pemeriksaan">
+                <i class="fas fa-check-circle"></i>
+                <span>Selesai</span>
+            </button>
+        </form>
+        @endif
+        
+        <!-- More Actions Dropdown -->
+        <div class="dropdown d-inline-block">
+            <button class="action-btn action-btn-icon action-dropdown" 
+                    type="button" 
+                    data-bs-toggle="dropdown"
+                    data-tooltip="Aksi Lainnya">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 py-2">
+                <li>
+                    <h6 class="dropdown-header fw-semibold text-muted px-3">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h6>
+                </li>
+                <li>
+                    <a class="dropdown-item py-2 px-3" href="#">
+                        <i class="fas fa-prescription-bottle text-warning me-3"></i>
+                        Resep
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item py-2 px-3" href="#">
+                        <i class="fas fa-flask text-info me-3"></i>
+                        Laboratorium
+                    </a>
+                </li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li>
+                    <a class="dropdown-item py-2 px-3" href="{{ route('patients.show', $visit->patient) }}">
+                        <i class="fas fa-user-circle text-primary me-3"></i>
+                        Profil Pasien
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item py-2 px-3" href="#">
+                        <i class="fas fa-history text-secondary me-3"></i>
+                        Riwayat Kunjungan
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -667,11 +1017,11 @@
                                                     </a>
                                                 </li>
                                                 @if($visit->status == 'selesai' && !$visit->transaction)
-                                                <li>
+                                                {{-- <li>
                                                     <a class="dropdown-item" href="{{ route('transactions.create', ['visit' => $visit->id]) }}">
                                                         <i class="fas fa-cash-register text-secondary me-2"></i>Buat Transaksi
                                                     </a>
-                                                </li>
+                                                </li> --}}
                                                 @endif
                                                 <li><hr class="dropdown-divider"></li>
                                                 <li>

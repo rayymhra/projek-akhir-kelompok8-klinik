@@ -246,9 +246,9 @@
                                     <i class="fas fa-times me-2"></i>Batal
                                 </a>
                                 <div class="btn-group">
-                                    <button type="button" class="btn btn-warning" onclick="saveDraft()">
+                                    {{-- <button type="button" class="btn btn-warning" onclick="saveDraft()">
                                         <i class="fas fa-save me-2"></i>Simpan Draft
-                                    </button>
+                                    </button> --}}
                                     <button type="submit" class="btn btn-success">
                                         <i class="fas fa-check-circle me-2"></i>Simpan & Selesaikan
                                     </button>

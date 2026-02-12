@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Visit;
 use App\Models\Patient;
 use App\Models\User;
+use App\Models\Visit;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 
 class VisitController extends Controller
 {
@@ -19,13 +20,23 @@ class VisitController extends Controller
     }
     
     // Apply filters
-    if ($request->has('status')) {
-        $query->where('status', $request->status);
-    }
-    
-    if ($request->has('tanggal')) {
-        $query->whereDate('tanggal_kunjungan', $request->tanggal);
-    } else {
+    if ($request->filled('status')) {
+    $query->where('status', $request->status);
+}
+
+if ($request->filled('tanggal')) {
+    $query->whereDate('tanggal_kunjungan', $request->tanggal);
+} elseif (auth()->user()->role == 'dokter') {
+    $query->whereDate('tanggal_kunjungan', today());
+}
+
+if ($request->filled('search')) {
+    $query->whereHas('patient', function($q) use ($request) {
+        $q->where('nama', 'like', '%' . $request->search . '%')
+          ->orWhere('no_rekam_medis', 'like', '%' . $request->search . '%');
+    });
+}
+ else {
         // For doctors, default to today's visits
         if (auth()->user()->role == 'dokter') {
             $query->whereDate('tanggal_kunjungan', today());

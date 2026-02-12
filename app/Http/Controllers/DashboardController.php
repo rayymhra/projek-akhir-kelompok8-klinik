@@ -9,6 +9,7 @@ use App\Models\Patient;
 use App\Models\Medicine;
 use App\Models\Transaction;
 use App\Models\MedicalRecord;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -48,64 +49,139 @@ class DashboardController extends Controller
 }
 
 
-    public function petugas()
-{
-    $today = Carbon::today();
-    $now = Carbon::now();
+//     public function petugas()
+// {
+//     $today = Carbon::today();
+//     $now = Carbon::now();
 
-    $stats = [
+//     $stats = [
 
-        // 🔹 CARD STATS
-        'todayVisits' => Visit::whereDate('created_at', $today)->count(),
+//         // 🔹 CARD STATS
+//         'todayVisits' => Visit::whereDate('created_at', $today)->count(),
 
-        'waitingVisits' => Visit::where('status', 'menunggu')->count(),
+//         'waitingVisits' => Visit::where('status', 'menunggu')->count(),
 
-        'newPatientsToday' => Patient::whereDate('created_at', $today)->count(),
+//         'newPatientsToday' => Patient::whereDate('created_at', $today)->count(),
 
-        'totalPatients' => Patient::count(),
+//         'totalPatients' => Patient::count(),
 
-        'monthlyVisits' => Visit::whereMonth('created_at', $now->month)
-                                ->whereYear('created_at', $now->year)
-                                ->count(),
+//         'monthlyVisits' => Visit::whereMonth('created_at', $now->month)
+//                                 ->whereYear('created_at', $now->year)
+//                                 ->count(),
 
-        // 🔹 CURRENT QUEUE (Antrian Saat Ini)
-        'currentQueue' => Visit::with(['patient', 'doctor'])
+//         // 🔹 CURRENT QUEUE (Antrian Saat Ini)
+//         'currentQueue' => Visit::with(['patient', 'doctor'])
+//             ->where('status', 'menunggu')
+//             ->orderBy('created_at')
+//             ->get()
+//             ->map(function ($visit, $index) {
+//                 return [
+//                     'id' => $visit->id,
+//                     'queue_number' => 'A' . str_pad($index + 1, 3, '0', STR_PAD_LEFT),
+//                     'patient_name' => $visit->patient->nama ?? '-',
+//                     'patient_id' => $visit->patient->id ?? null,
+//                     'doctor_name' => $visit->doctor->name ?? 'Belum ditentukan',
+//                     'time' => $visit->created_at->format('H:i'),
+//                     'priority' => $visit->priority ?? false,
+//                     'note' => $visit->note,
+//                 ];
+//             }),
+
+//         // 🔹 TABLE — PASIEN BARU
+//         'recentPatients' => Patient::whereDate('created_at', $today)
+//             ->latest()
+//             ->take(5)
+//             ->get(),
+
+//         // 🔹 TABLE — KUNJUNGAN HARI INI
+//         'todaysVisits' => Visit::with(['patient', 'transaction'])
+//             ->whereDate('created_at', $today)
+//             ->latest()
+//             ->take(10)
+//             ->get(),
+
+//         // 🔹 DOCTOR LIST (Modal Cetak Antrian)
+//         'doctors' => collect(), // empty collection so view doesn't error
+
+//     ];
+
+//     return view('dashboard.petugas', compact('stats'));
+// }
+
+public function petugas()
+    {
+        $today = Carbon::today();
+        $user = auth()->user();
+        
+        $stats = [
+            'todayVisits' => Visit::whereDate('tanggal_kunjungan', $today)->count(),
+            'waitingVisits' => Visit::whereDate('tanggal_kunjungan', $today)
+                ->where('status', 'menunggu')
+                ->count(),
+            'newPatientsToday' => Patient::whereDate('created_at', $today)->count(),
+            'totalPatients' => Patient::count(),
+            'monthlyVisits' => Visit::whereMonth('tanggal_kunjungan', $today->month)
+                ->whereYear('tanggal_kunjungan', $today->year)
+                ->count(),
+            'currentQueue' => $this->getCurrentQueue(),
+            'doctors' => User::where('role', 'dokter')->get(['id', 'name']),
+            'todaysVisits' => Visit::with('patient')
+                ->whereDate('tanggal_kunjungan', $today)
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get(),
+            'recentPatients' => Patient::orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get(),
+            'poliklinik' => $this->getPoliklinikList()
+        ];
+        
+        return view('dashboard.petugas', compact('stats'));
+    }
+    
+    private function getCurrentQueue()
+    {
+        $today = Carbon::today();
+        
+        $queue = Visit::with(['patient', 'doctor'])
+            ->whereDate('tanggal_kunjungan', $today)
             ->where('status', 'menunggu')
-            ->orderBy('created_at')
+            ->orderByRaw("FIELD(prioritas, 'prioritas', 'normal')")
+            ->orderBy('nomor_antrian')
             ->get()
-            ->map(function ($visit, $index) {
+            ->map(function($visit) {
                 return [
                     'id' => $visit->id,
-                    'queue_number' => 'A' . str_pad($index + 1, 3, '0', STR_PAD_LEFT),
-                    'patient_name' => $visit->patient->nama ?? '-',
-                    'patient_id' => $visit->patient->id ?? null,
-                    'doctor_name' => $visit->doctor->name ?? 'Belum ditentukan',
+                    'queue_number' => $visit->prefix_antrian . str_pad($visit->nomor_antrian, 3, '0', STR_PAD_LEFT),
+                    'patient_id' => $visit->patient_id,
+                    'patient_name' => $visit->patient->nama,
+                    'doctor_id' => $visit->doctor_id,
+                    'doctor_name' => $visit->doctor->name,
                     'time' => $visit->created_at->format('H:i'),
-                    'priority' => $visit->priority ?? false,
-                    'note' => $visit->note,
+                    'priority' => $visit->prioritas == 'prioritas',
+                    'priority_text' => $visit->prioritas,
+                    'note' => $visit->queue_note,
+                    'poli' => $visit->poli
                 ];
-            }),
-
-        // 🔹 TABLE — PASIEN BARU
-        'recentPatients' => Patient::whereDate('created_at', $today)
-            ->latest()
-            ->take(5)
-            ->get(),
-
-        // 🔹 TABLE — KUNJUNGAN HARI INI
-        'todaysVisits' => Visit::with(['patient', 'transaction'])
-            ->whereDate('created_at', $today)
-            ->latest()
-            ->take(10)
-            ->get(),
-
-        // 🔹 DOCTOR LIST (Modal Cetak Antrian)
-        'doctors' => collect(), // empty collection so view doesn't error
-
-    ];
-
-    return view('dashboard.petugas', compact('stats'));
-}
+            });
+            
+        return $queue;
+    }
+    
+    private function getPoliklinikList()
+    {
+        return [
+            'Umum' => 'Poliklinik Umum',
+            'Gigi' => 'Poliklinik Gigi',
+            'Anak' => 'Poliklinik Anak',
+            'Kandungan' => 'Poliklinik Kandungan',
+            'Bedah' => 'Poliklinik Bedah',
+            'Mata' => 'Poliklinik Mata',
+            'Kulit' => 'Poliklinik Kulit & Kelamin',
+            'Jantung' => 'Poliklinik Jantung',
+            'Penyakit Dalam' => 'Poliklinik Penyakit Dalam'
+        ];
+    }
 
 
 
@@ -194,7 +270,49 @@ class DashboardController extends Controller
         'ewalletAmount'
     );
 
-    return view('dashboard.kasir', compact('stats'));
+     $yearlyData = Transaction::select(
+            DB::raw('YEAR(created_at) as year'),
+            DB::raw('SUM(total_biaya) as total')
+        )
+        ->where('status', 'lunas')
+        ->groupBy('year')
+        ->orderBy('year')
+        ->get();
+
+     $yearlyStats = [
+        'years' => $yearlyData->pluck('year'),
+        'totals' => $yearlyData->pluck('total'),
+    ];
+
+    /* =========================
+       DAILY TRANSACTIONS (7 DAYS)
+    ========================== */
+    $dailyData = Transaction::select(
+            DB::raw('DATE(created_at) as date'),
+            DB::raw('SUM(total_biaya) as total')
+        )
+        ->where('status', 'lunas')
+        ->whereBetween('created_at', [
+            now()->subDays(6)->startOfDay(),
+            now()->endOfDay()
+        ])
+        ->groupBy('date')
+        ->orderBy('date')
+        ->get();
+
+    $dailyStats = [
+        'dates' => $dailyData->pluck('date'),
+        'totals' => $dailyData->pluck('total'),
+    ];
+
+    $dailyStats = [
+        'dates' => $dailyData->pluck('date'),
+        'totals' => $dailyData->pluck('total'),
+    ];
+
+    return view('dashboard.kasir', compact( 'stats',
+        'yearlyStats',
+        'dailyStats'));
 }
 
 

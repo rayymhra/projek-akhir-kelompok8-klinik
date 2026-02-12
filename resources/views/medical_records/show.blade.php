@@ -57,7 +57,7 @@
                                             </tr>
                                             <tr>
                                                 <th>Usia:</th>
-                                                <td>{{ $medicalRecord->visit->patient->umur }} tahun</td>
+                                                <td>{{ $medicalRecord->visit->patient->age }} tahun</td>
                                             </tr>
                                             <tr>
                                                 <th>Jenis Kelamin:</th>

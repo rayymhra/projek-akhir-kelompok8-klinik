@@ -1,8 +1,10 @@
 <?php
 
+use App\Models\Visit;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\QueueController;
 use App\Http\Controllers\VisitController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\PatientController;
@@ -273,3 +275,32 @@ Route::get('/visits/search', function(Request $request) {
 
 // routes/web.php
 Route::resource('services', ServiceController::class)->except(['show']);
+
+// Medical Records Routes
+Route::resource('medical-records', MedicalRecordController::class);
+Route::get('medical-records/{medicalRecord}/print', [MedicalRecordController::class, 'print'])->name('medical-records.print');
+Route::get('medical-records/{medicalRecord}/print-simple', [MedicalRecordController::class, 'printSimple'])->name('medical-records.print-simple');
+Route::get('api/medical-records/stats', [MedicalRecordController::class, 'getStats'])->name('medical-records.stats');
+
+
+Route::get('/reports/print', [ReportController::class, 'print'])
+    ->name('reports.print');
+
+    // Queue Management Routes
+
+// Queue Routes
+Route::post('/queue/generate', [QueueController::class, 'generate'])->name('queue.generate');
+Route::get('/queue/print/{id}', [QueueController::class, 'print'])->name('queue.print');
+Route::post('/queue/call-next', [QueueController::class, 'callNext'])->name('queue.call-next');
+Route::post('/queue/{id}/complete', [QueueController::class, 'complete'])->name('queue.complete');
+Route::post('/queue/{id}/cancel', [QueueController::class, 'cancel'])->name('queue.cancel');
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    // Queue Management
+    Route::get('/queue/current', [QueueController::class, 'current']);
+    Route::post('/queue/generate', [QueueController::class, 'generate']);
+    Route::get('/queue/today', [QueueController::class, 'today']);
+    Route::post('/queue/call-next', [QueueController::class, 'callNext']);
+    Route::post('/queue/{id}/complete', [QueueController::class, 'complete']);
+    Route::post('/queue/{id}/cancel', [QueueController::class, 'cancel']);
+});

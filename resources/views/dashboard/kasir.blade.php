@@ -2,843 +2,691 @@
 
 @section('title', 'Dashboard Kasir')
 
-@section('content')
-<div class="dashboard-header mb-4">
-    <div class="d-flex justify-content-between align-items-center">
-        <div>
-            <h1 class="page-title">Dashboard Kasir</h1>
-            <p class="page-subtitle">{{ now()->format('l, d F Y') }}</p>
-        </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#quickPaymentModal">
-                <i class="fas fa-bolt me-2"></i>Pembayaran Cepat
-            </button>
-            <a href="{{ route('transactions.create') }}" class="btn btn-primary">
-                <i class="fas fa-plus-circle me-2"></i>Transaksi Baru
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- Stats Overview -->
-<div class="row g-3 mb-4">
-    <div class="col-xl-3 col-md-6">
-        <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <i class="fas fa-receipt"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-label">Transaksi Hari Ini</div>
-                <div class="stat-value">{{ number_format($stats['todayTransactions']) }}</div>
-                <div class="stat-meta">
-                    <span class="badge badge-soft-primary">
-                        <i class="fas fa-exchange-alt me-1"></i>Total Transaksi
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6">
-        <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-                <i class="fas fa-wallet"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-label">Pendapatan Hari Ini</div>
-                <div class="stat-value" style="font-size: 20px;">Rp {{ number_format($stats['todayIncome'], 0, ',', '.') }}</div>
-                <div class="stat-meta">
-                    <span class="badge badge-soft-success">
-                        <i class="fas fa-arrow-up me-1"></i>Sudah Diterima
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6">
-        <div class="stat-card stat-card-warning">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
-                <i class="fas fa-hourglass-half"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-label">Menunggu Pembayaran</div>
-                <div class="stat-value">{{ number_format($stats['pendingTransactions']) }}</div>
-                <div class="stat-meta">
-                    <span class="badge badge-soft-warning">
-                        <i class="fas fa-clock me-1"></i>Belum Lunas
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6">
-        <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
-                <i class="fas fa-chart-line"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-label">Rata-rata Transaksi</div>
-                <div class="stat-value" style="font-size: 18px;">Rp {{ number_format($stats['avgTransaction'], 0, ',', '.') }}</div>
-                <div class="stat-meta">
-                    <span class="badge badge-soft-info">
-                        <i class="fas fa-calculator me-1"></i>Per Transaksi
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-3">
-    <!-- Pending Payments -->
-    <div class="col-lg-5">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="mb-0">Menunggu Pembayaran</h5>
-                    <small class="text-muted">{{ count($stats['pendingPayments']) }} pembayaran tertunda</small>
-                </div>
-                <button class="btn btn-sm btn-outline-secondary" onclick="refreshPendingPayments()">
-                    <i class="fas fa-sync-alt"></i>
-                </button>
-            </div>
-            <div class="card-body p-0">
-                <div class="pending-payments-list" style="max-height: 500px; overflow-y: auto;">
-                    @forelse($stats['pendingPayments'] as $transaction)
-                    <div class="pending-payment-item">
-                        <div class="payment-patient-info">
-                            <div class="patient-avatar">
-                                {{ substr($transaction->visit->patient->nama, 0, 1) }}
-                            </div>
-                            <div class="patient-details">
-                                <div class="patient-name">{{ $transaction->visit->patient->nama }}</div>
-                                <div class="patient-meta">
-                                    <small class="text-muted">
-                                        {{ $transaction->visit->patient->no_rekam_medis }} • 
-                                        <i class="fas fa-clock me-1"></i>{{ $transaction->created_at->diffForHumans() }}
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="payment-details">
-                            <div class="payment-amount">Rp {{ number_format($transaction->total_biaya, 0, ',', '.') }}</div>
-                            <div class="payment-method">
-                                <span class="badge bg-{{ $transaction->metode_pembayaran == 'tunai' ? 'primary' : 
-                                                          ($transaction->metode_pembayaran == 'transfer' ? 'success' : 
-                                                          ($transaction->metode_pembayaran == 'qris' ? 'info' : 'warning')) }}">
-                                    {{ strtoupper($transaction->metode_pembayaran) }}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="payment-action">
-                            <button class="btn btn-sm btn-success" onclick="processPayment({{ $transaction->id }})">
-                                <i class="fas fa-check me-1"></i>Proses
-                            </button>
-                        </div>
-                    </div>
-                    @empty
-                    <div class="empty-state">
-                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                        <h6 class="text-success">Semua Pembayaran Selesai</h6>
-                        <p class="text-muted mb-0">Tidak ada pembayaran tertunda</p>
-                    </div>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Payment Tools -->
-    <div class="col-lg-7">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Panel Pembayaran</h5>
-                <small class="text-muted">Metode pembayaran & kalkulator</small>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <!-- Payment Methods -->
-                    <div class="col-md-6 mb-4">
-                        <h6 class="text-primary mb-3">Metode Pembayaran</h6>
-                        <div class="payment-methods-grid">
-                            <button class="payment-method-btn" onclick="selectPaymentMethod('tunai')">
-                                <div class="payment-method-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                                    <i class="fas fa-money-bill-wave"></i>
-                                </div>
-                                <span>Tunai</span>
-                            </button>
-                            <button class="payment-method-btn" onclick="selectPaymentMethod('transfer')">
-                                <div class="payment-method-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-                                    <i class="fas fa-university"></i>
-                                </div>
-                                <span>Transfer</span>
-                            </button>
-                            <button class="payment-method-btn" onclick="selectPaymentMethod('qris')">
-                                <div class="payment-method-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
-                                    <i class="fas fa-qrcode"></i>
-                                </div>
-                                <span>QRIS</span>
-                            </button>
-                            <button class="payment-method-btn" onclick="selectPaymentMethod('e-wallet')">
-                                <div class="payment-method-icon" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
-                                    <i class="fas fa-mobile-alt"></i>
-                                </div>
-                                <span>E-Wallet</span>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Calculator -->
-                    <div class="col-md-6">
-                        <h6 class="text-primary mb-3">Kalkulator</h6>
-                        <div class="calculator-widget">
-                            <div class="calculator-display">
-                                <input type="text" class="form-control form-control-lg text-end" 
-                                       id="calcDisplay" value="0" readonly>
-                            </div>
-                            <div class="calculator-buttons">
-                                <div class="calc-row">
-                                    <button class="calc-btn" onclick="calcInput('7')">7</button>
-                                    <button class="calc-btn" onclick="calcInput('8')">8</button>
-                                    <button class="calc-btn" onclick="calcInput('9')">9</button>
-                                    <button class="calc-btn calc-btn-danger" onclick="calcClear()">C</button>
-                                </div>
-                                <div class="calc-row">
-                                    <button class="calc-btn" onclick="calcInput('4')">4</button>
-                                    <button class="calc-btn" onclick="calcInput('5')">5</button>
-                                    <button class="calc-btn" onclick="calcInput('6')">6</button>
-                                    <button class="calc-btn" onclick="calcInput('+')">+</button>
-                                </div>
-                                <div class="calc-row">
-                                    <button class="calc-btn" onclick="calcInput('1')">1</button>
-                                    <button class="calc-btn" onclick="calcInput('2')">2</button>
-                                    <button class="calc-btn" onclick="calcInput('3')">3</button>
-                                    <button class="calc-btn" onclick="calcInput('-')">-</button>
-                                </div>
-                                <div class="calc-row">
-                                    <button class="calc-btn" onclick="calcInput('0')">0</button>
-                                    <button class="calc-btn" onclick="calcInput('.')">.</button>
-                                    <button class="calc-btn calc-btn-primary" onclick="calcCalculate()">=</button>
-                                    <button class="calc-btn calc-btn-success" onclick="copyAmount()">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Recent Transactions & Statistics -->
-<div class="row g-3 mt-2">
-    <div class="col-lg-7">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="mb-0">Transaksi Terbaru</h5>
-                    <small class="text-muted">Riwayat transaksi hari ini</small>
-                </div>
-                <a href="{{ route('transactions.index') }}" class="btn btn-sm btn-outline-primary">
-                    Lihat Semua <i class="fas fa-arrow-right ms-1"></i>
-                </a>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead>
-                            <tr>
-                                <th style="width: 80px;">Waktu</th>
-                                <th>Pasien</th>
-                                <th>Metode</th>
-                                <th class="text-end">Jumlah</th>
-                                <th style="width: 100px;">Status</th>
-                                <th style="width: 100px;">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($stats['recentTransactions'] as $transaction)
-                            <tr>
-                                <td>
-                                    <div class="fw-semibold">{{ $transaction->created_at->format('H:i') }}</div>
-                                    <small class="text-muted">{{ $transaction->created_at->format('d/m') }}</small>
-                                </td>
-                                <td>
-                                    <div class="fw-semibold">{{ $transaction->visit->patient->nama }}</div>
-                                    <small class="text-muted">{{ $transaction->visit->patient->no_rekam_medis }}</small>
-                                </td>
-                                <td>
-                                    <span class="badge bg-{{ $transaction->metode_pembayaran == 'tunai' ? 'primary' : 
-                                                              ($transaction->metode_pembayaran == 'transfer' ? 'success' : 
-                                                              ($transaction->metode_pembayaran == 'qris' ? 'info' : 'warning')) }}">
-                                        {{ strtoupper($transaction->metode_pembayaran) }}
-                                    </span>
-                                </td>
-                                <td class="text-end fw-semibold">
-                                    Rp {{ number_format($transaction->total_biaya, 0, ',', '.') }}
-                                </td>
-                                <td>
-                                    <span class="badge badge-status-{{ $transaction->status }}">
-                                        {{ ucfirst($transaction->status) }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-secondary" onclick="viewReceipt({{ $transaction->id }})">
-                                            <i class="fas fa-receipt"></i>
-                                        </button>
-                                        @if($transaction->status == 'menunggu')
-                                        <button class="btn btn-outline-success" onclick="confirmPayment({{ $transaction->id }})">
-                                            <i class="fas fa-check"></i>
-                                        </button>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="6" class="text-center py-5">
-                                    <i class="fas fa-inbox fa-3x text-muted mb-3 d-block"></i>
-                                    <p class="text-muted mb-0">Belum ada transaksi hari ini</p>
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Payment Statistics Chart -->
-    <div class="col-lg-5">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Statistik Pembayaran</h5>
-                <small class="text-muted">Distribusi metode hari ini</small>
-            </div>
-            <div class="card-body">
-                <div class="chart-container mb-4">
-                    <canvas id="paymentMethodChart" height="200"></canvas>
-                </div>
-                
-                <div class="payment-summary">
-                    <div class="summary-item">
-                        <span class="summary-label">Total Transaksi</span>
-                        <span class="summary-value">{{ $stats['todayTransactions'] }}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Total Pendapatan</span>
-                        <span class="summary-value text-success">Rp {{ number_format($stats['todayIncome'], 0, ',', '.') }}</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Rata-rata Transaksi</span>
-                        <span class="summary-value">Rp {{ number_format($stats['avgTransaction'], 0, ',', '.') }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Payment Modal -->
-<div class="modal fade" id="quickPaymentModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div>
-                    <h5 class="modal-title mb-0">Pembayaran Cepat</h5>
-                    <small class="text-muted">Proses pembayaran dengan cepat</small>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="quickPaymentModalForm">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Cari Pasien</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                <input type="text" class="form-control" id="modalSearchPatient" 
-                                       placeholder="Nama atau No. RM..." autocomplete="off">
-                            </div>
-                            <div id="patientSearchResults" class="mt-2" style="max-height: 200px; overflow-y: auto;"></div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Pilih Kunjungan</label>
-                            <select class="form-select" id="visitSelect" disabled>
-                                <option value="">Pilih pasien terlebih dahulu</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Metode Pembayaran</label>
-                        <div class="payment-methods-modal">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="paymentMethod" id="cash" value="tunai" checked>
-                                <label class="form-check-label" for="cash">
-                                    <i class="fas fa-money-bill-wave me-1"></i>Tunai
-                                </label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="paymentMethod" id="transfer" value="transfer">
-                                <label class="form-check-label" for="transfer">
-                                    <i class="fas fa-university me-1"></i>Transfer
-                                </label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="paymentMethod" id="qris" value="qris">
-                                <label class="form-check-label" for="qris">
-                                    <i class="fas fa-qrcode me-1"></i>QRIS
-                                </label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="paymentMethod" id="ewallet" value="e-wallet">
-                                <label class="form-check-label" for="ewallet">
-                                    <i class="fas fa-mobile-alt me-1"></i>E-Wallet
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Jumlah Bayar</label>
-                            <div class="input-group">
-                                <span class="input-group-text">Rp</span>
-                                <input type="number" class="form-control" id="paymentAmount" 
-                                       placeholder="0" min="0" required>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Catatan (Opsional)</label>
-                            <input type="text" class="form-control" id="paymentNote" 
-                                   placeholder="Catatan tambahan...">
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary" onclick="processQuickPayment()">
-                    <i class="fas fa-check me-2"></i>Proses Pembayaran
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-@endsection
-
 @section('styles')
 <style>
-    .stat-card-warning {
-        animation: pulse-warning 2s infinite;
+    /* Simplified Stat Cards */
+    .cashier-stat-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        height: 100%;
     }
     
-    @keyframes pulse-warning {
-        0%, 100% {
-            background: white;
-        }
-        50% {
-            background: rgba(251, 191, 36, 0.05);
-        }
+    .cashier-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .stat-icon-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+        color: white;
+        font-size: 1.25rem;
+    }
+    
+    .stat-content {
+        flex: 1;
+    }
+    
+    .stat-label {
+        font-size: 12px;
+        color: var(--text-secondary);
+        font-weight: 500;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+        line-height: 1.2;
+    }
+    
+    .stat-currency {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--primary-color);
     }
     
     /* Pending Payments */
-    .pending-payments-list {
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .pending-payment-item {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        padding: 16px 20px;
-        border-bottom: 1px solid var(--border-color);
+    .pending-payment-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
         transition: all 0.2s ease;
-        border-left: 3px solid #fbbf24;
+        border-left: 4px solid #fbbf24;
     }
     
-    .pending-payment-item:hover {
+    .pending-payment-card:hover {
         background: var(--background);
+        box-shadow: var(--shadow-sm);
     }
     
-    .pending-payment-item:last-child {
-        border-bottom: none;
-    }
-    
-    .payment-patient-info {
+    .patient-avatar-sm {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--primary-color) 0%, #8b5cf6 100%);
+        color: white;
         display: flex;
         align-items: center;
-        gap: 12px;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+    
+    .patient-info {
         flex: 1;
         min-width: 0;
     }
     
-    .payment-details {
-        text-align: right;
-        flex-shrink: 0;
+    .patient-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+    
+    .patient-details {
+        font-size: 12px;
+        color: var(--text-secondary);
     }
     
     .payment-amount {
         font-size: 16px;
         font-weight: 700;
         color: var(--text-primary);
+        text-align: right;
         margin-bottom: 4px;
     }
     
-    .payment-method {
-        margin-top: 4px;
+    .payment-method-badge {
+        font-size: 11px;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-weight: 500;
     }
     
-    .payment-action {
-        flex-shrink: 0;
-    }
-    
-    /* Payment Methods Grid */
-    .payment-methods-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
+    /* Quick Actions */
+    .quick-actions {
+        display: flex;
         gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
     }
     
-    .payment-method-btn {
+    .quick-action-btn {
+        flex: 1;
+        min-width: 120px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 10px;
-        padding: 20px;
-        background: white;
-        border: 2px solid var(--border-color);
-        border-radius: 12px;
-        cursor: pointer;
+        gap: 8px;
+        text-decoration: none;
         transition: all 0.2s ease;
-        font-weight: 500;
-        color: var(--text-primary);
     }
     
-    .payment-method-btn:hover {
+    .quick-action-btn:hover {
         border-color: var(--primary-color);
         transform: translateY(-2px);
         box-shadow: var(--shadow-md);
     }
     
-    .payment-method-icon {
-        width: 48px;
-        height: 48px;
+    .quick-action-icon {
+        width: 40px;
+        height: 40px;
         border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 20px;
+        font-size: 1rem;
     }
     
-    /* Calculator */
-    .calculator-widget {
+    .quick-action-label {
+        font-weight: 500;
+        color: var(--text-primary);
+        font-size: 12px;
+        text-align: center;
+    }
+    
+    /* Recent Transactions */
+    .transaction-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-color);
+        transition: background-color 0.2s ease;
+    }
+    
+    .transaction-item:hover {
         background: var(--background);
-        padding: 16px;
-        border-radius: 12px;
-        border: 1px solid var(--border-color);
     }
     
-    .calculator-display {
-        margin-bottom: 12px;
+    .transaction-time {
+        width: 80px;
+        flex-shrink: 0;
     }
     
-    .calculator-display input {
-        font-size: 24px;
-        font-weight: 700;
-        background: white;
-        border: 1px solid var(--border-color);
-    }
-    
-    .calculator-buttons {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-    
-    .calc-row {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 8px;
-    }
-    
-    .calc-btn {
-        padding: 16px;
-        background: white;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
+    .time-main {
         font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-size: 16px;
+        color: var(--text-primary);
+        margin-bottom: 2px;
     }
     
-    .calc-btn:hover {
-        background: var(--sidebar-hover);
-        border-color: var(--primary-color);
+    .time-sub {
+        font-size: 11px;
+        color: var(--text-secondary);
     }
     
-    .calc-btn:active {
-        transform: scale(0.95);
+    .transaction-patient {
+        flex: 1;
+        min-width: 0;
+        padding: 0 16px;
     }
     
-    .calc-btn-primary {
-        background: var(--primary-color);
-        color: white;
-        border-color: var(--primary-color);
+    .patient-name-sm {
+        font-weight: 500;
+        color: var(--text-primary);
+        margin-bottom: 2px;
     }
     
-    .calc-btn-primary:hover {
-        background: var(--primary-hover);
+    .patient-meta {
+        font-size: 11px;
+        color: var(--text-secondary);
     }
     
-    .calc-btn-success {
-        background: #10b981;
-        color: white;
-        border-color: #10b981;
+    .transaction-amount {
+        font-weight: 600;
+        color: var(--text-primary);
+        text-align: right;
+        width: 100px;
+        flex-shrink: 0;
     }
     
-    .calc-btn-success:hover {
-        background: #059669;
+    .transaction-status {
+        width: 80px;
+        flex-shrink: 0;
     }
     
-    .calc-btn-danger {
-        background: #ef4444;
-        color: white;
-        border-color: #ef4444;
+    .transaction-actions {
+        width: 80px;
+        flex-shrink: 0;
+        text-align: right;
     }
     
-    .calc-btn-danger:hover {
-        background: #dc2626;
+    /* Empty States */
+    .empty-state {
+        padding: 40px 20px;
+        text-align: center;
     }
     
-    /* Payment Summary */
-    .payment-summary {
-        display: flex;
-        flex-direction: column;
+    .empty-state-icon {
+        font-size: 2.5rem;
+        color: var(--border-color);
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+    
+    .empty-state-text {
+        color: var(--text-secondary);
+        margin: 0;
+    }
+    
+    /* Chart Container */
+    .chart-minimal {
+        height: 200px;
+        margin-bottom: 24px;
+    }
+    
+    /* Summary Grid */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
         gap: 12px;
     }
     
     .summary-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 16px;
         background: var(--background);
-        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 12px;
     }
     
     .summary-label {
-        font-size: 14px;
+        font-size: 11px;
         color: var(--text-secondary);
         font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
     }
     
     .summary-value {
-        font-size: 16px;
-        font-weight: 700;
+        font-size: 14px;
+        font-weight: 600;
         color: var(--text-primary);
     }
     
-    /* Modal Payment Methods */
-    .payment-methods-modal {
-        display: flex;
-        gap: 16px;
-        flex-wrap: wrap;
+    /* Status Colors */
+    .status-paid {
+        background-color: #d1fae5;
+        color: #065f46;
     }
     
-    .payment-methods-modal .form-check-inline {
-        margin: 0;
-        flex: 1;
-        min-width: 120px;
+    .status-pending {
+        background-color: #fef3c7;
+        color: #92400e;
     }
     
-    .payment-methods-modal .form-check-label {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 12px 16px;
-        background: var(--background);
-        border: 2px solid var(--border-color);
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-weight: 500;
-        width: 100%;
+    /* Method Colors */
+    .method-cash {
+        background-color: rgba(99, 102, 241, 0.1);
+        color: var(--primary-color);
     }
     
-    .payment-methods-modal .form-check-input {
-        display: none;
+    .method-transfer {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #059669;
     }
     
-    .payment-methods-modal .form-check-input:checked + label {
-        background: var(--primary-color);
-        color: white;
-        border-color: var(--primary-color);
+    .method-qris {
+        background-color: rgba(14, 165, 233, 0.1);
+        color: #0284c7;
+    }
+    
+    .method-ewallet {
+        background-color: rgba(245, 158, 11, 0.1);
+        color: #d97706;
+    }
+    
+    /* Mobile Optimizations */
+    @media (max-width: 768px) {
+        .quick-action-btn {
+            min-width: calc(50% - 6px);
+        }
+        
+        .transaction-item {
+            flex-wrap: wrap;
+            padding: 12px;
+        }
+        
+        .transaction-patient {
+            order: 3;
+            width: 100%;
+            padding: 8px 0 0 0;
+        }
+        
+        .transaction-amount {
+            order: 2;
+            text-align: left;
+            width: auto;
+            flex: 1;
+        }
+        
+        .transaction-actions {
+            order: 1;
+            width: auto;
+        }
+        
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
+@endsection
+
+@section('content')
+<div class="row">
+    <div class="col-12">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title mb-1">Dashboard Kasir</h1>
+                <p class="page-subtitle">{{ now()->translatedFormat('l, d F Y') }}</p>
+            </div>
+            <a href="{{ route('transactions.step1') }}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Transaksi Baru
+            </a>
+        </div>
+
+        
+
+        <!-- Stats Overview -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="cashier-stat-card">
+                    <div class="stat-icon-circle" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Transaksi Hari Ini</div>
+                        <div class="stat-value">{{ number_format($stats['todayTransactions']) }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="cashier-stat-card">
+                    <div class="stat-icon-circle" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Pendapatan Hari Ini</div>
+                        <div class="stat-value">
+                            <span class="stat-currency">Rp</span> {{ number_format($stats['todayIncome'], 0, ',', '.') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {{-- <div class="col-md-6 col-lg-3">
+                <div class="cashier-stat-card">
+                    <div class="stat-icon-circle" style="background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Menunggu Pembayaran</div>
+                        <div class="stat-value">{{ number_format($stats['pendingTransactions']) }}</div>
+                    </div>
+                </div>
+            </div> --}}
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="cashier-stat-card">
+                    <div class="stat-icon-circle" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Rata-rata Transaksi</div>
+                        <div class="stat-value">
+                            <span class="stat-currency">Rp</span> {{ number_format($stats['avgTransaction'], 0, ',', '.') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="row g-3">
+            <!-- Left Column: Pending Payments -->
+            <!-- Left Column: Yearly Transactions Chart -->
+<div class="col-lg-6">
+    <div class="card h-100">
+        <div class="card-header">
+            <h5 class="mb-0">Transaksi Per Tahun</h5>
+            <small class="text-muted">Ringkasan pendapatan tahunan</small>
+        </div>
+        <div class="card-body">
+            <div class="chart-minimal" style="height:260px">
+                <canvas id="yearlyTransactionChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+            <!-- Right Column: Stats & Chart -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">Statistik Hari Ini</h5>
+                            <small class="text-muted">Ringkasan performa</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Chart -->
+                        <div class="chart-minimal">
+                            <canvas id="paymentMethodChart"></canvas>
+                        </div>
+                        
+                        <!-- Summary Grid -->
+                        <div class="summary-grid mb-4">
+                            <div class="summary-item">
+                                <div class="summary-label">Transaksi</div>
+                                <div class="summary-value">{{ $stats['todayTransactions'] }}</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">Pendapatan</div>
+                                <div class="summary-value text-success">Rp {{ number_format($stats['todayIncome'], 0, ',', '.') }}</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">Rata-rata</div>
+                                <div class="summary-value">Rp {{ number_format($stats['avgTransaction'], 0, ',', '.') }}</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">Pending</div>
+                                <div class="summary-value">{{ $stats['pendingTransactions'] }}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Method Breakdown -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted">Metode Pembayaran</small>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span class="badge method-cash">TUNAI</span>
+                                <span class="badge method-transfer">TRANSFER</span>
+                                <span class="badge method-qris">QRIS</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">Transaksi Terbaru</h5>
+                            <small class="text-muted">Riwayat transaksi hari ini</small>
+                        </div>
+                        <a href="{{ route('transactions.index') }}" class="btn btn-sm btn-outline-primary">
+                            Lihat Semua <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                    <div class="card-body p-0">
+                        @if(count($stats['recentTransactions']) > 0)
+                            @foreach($stats['recentTransactions'] as $transaction)
+                            <div class="transaction-item">
+                                <div class="transaction-time">
+                                    <div class="time-main">{{ $transaction->created_at->format('H:i') }}</div>
+                                    <div class="time-sub">{{ $transaction->created_at->format('d/m') }}</div>
+                                </div>
+                                <div class="transaction-patient">
+                                    <div class="patient-name-sm">{{ $transaction->visit->patient->nama }}</div>
+                                    <div class="patient-meta">{{ $transaction->visit->patient->no_rekam_medis }}</div>
+                                </div>
+                                <div class="transaction-amount">
+                                    Rp {{ number_format($transaction->total_biaya, 0, ',', '.') }}
+                                </div>
+                                <div class="transaction-status">
+                                    <span class="badge status-{{ $transaction->status == 'lunas' ? 'paid' : 'pending' }}">
+                                        {{ ucfirst($transaction->status) }}
+                                    </span>
+                                </div>
+                                <div class="transaction-actions">
+                                    <a href="{{ route('transactions.show', $transaction) }}" 
+                                       class="btn btn-sm btn-outline-secondary" 
+                                       title="Lihat Detail">
+                                        <i class="fas fa-eye fa-xs"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            @endforeach
+                        @else
+                            <div class="empty-state">
+                                <i class="fas fa-inbox empty-state-icon"></i>
+                                <p class="empty-state-text">Belum ada transaksi hari ini</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Initialize calculator
-    window.calcValue = '0';
-    window.calcOperator = '';
-    window.calcPreviousValue = '';
-    
-    function calcInput(value) {
-        if (value === '.') {
-            if (!window.calcValue.includes('.')) {
-                window.calcValue += '.';
+    document.addEventListener('DOMContentLoaded', function() {
+        // Payment method chart
+        const ctx = document.getElementById('paymentMethodChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Tunai', 'Transfer', 'QRIS', 'E-Wallet'],
+                datasets: [{
+                    data: [
+                        {{ $stats['cashAmount'] ?? 0 }},
+                        {{ $stats['transferAmount'] ?? 0 }},
+                        {{ $stats['qrisAmount'] ?? 0 }},
+                        {{ $stats['ewalletAmount'] ?? 0 }}
+                    ],
+                    backgroundColor: [
+                        'rgba(99, 102, 241, 0.8)',
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(14, 165, 233, 0.8)',
+                        'rgba(245, 158, 11, 0.8)'
+                    ],
+                    borderWidth: 1,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += 'Rp ' + context.parsed.toLocaleString('id-ID');
+                                return label;
+                            }
+                        }
+                    }
+                },
+                cutout: '65%',
+                spacing: 0
             }
-        } else if (value === '+' || value === '-') {
-            window.calcOperator = value;
-            window.calcPreviousValue = window.calcValue;
-            window.calcValue = '0';
-        } else {
-            if (window.calcValue === '0') {
-                window.calcValue = value;
-            } else {
-                window.calcValue += value;
-            }
-        }
-        updateCalcDisplay();
-    }
-    
-    function calcClear() {
-        window.calcValue = '0';
-        window.calcOperator = '';
-        window.calcPreviousValue = '';
-        updateCalcDisplay();
-    }
-    
-    function calcCalculate() {
-        if (window.calcOperator && window.calcPreviousValue) {
-            const prev = parseFloat(window.calcPreviousValue);
-            const current = parseFloat(window.calcValue);
-            
-            switch(window.calcOperator) {
-                case '+':
-                    window.calcValue = (prev + current).toString();
-                    break;
-                case '-':
-                    window.calcValue = (prev - current).toString();
-                    break;
-            }
-            
-            window.calcOperator = '';
-            window.calcPreviousValue = '';
-            updateCalcDisplay();
-        }
-    }
-    
-    function updateCalcDisplay() {
-        document.getElementById('calcDisplay').value = window.calcValue;
-    }
-    
-    function copyAmount() {
-        const amount = window.calcValue;
-        navigator.clipboard.writeText(amount).then(() => {
-            showNotification('Jumlah berhasil disalin: ' + amount, 'success');
         });
-    }
-    
-    function selectPaymentMethod(method) {
-        showNotification(`Metode pembayaran: ${method.toUpperCase()}`, 'info');
-    }
-    
-    function refreshPendingPayments() {
-        location.reload();
-    }
-    
-    function processPayment(transactionId) {
-        if(confirm('Proses pembayaran ini?')) {
-            // Process payment logic here
-            location.reload();
-        }
-    }
-    
-    function confirmPayment(transactionId) {
-        if(confirm('Konfirmasi pembayaran?')) {
-            // Confirm payment logic here
-            location.reload();
-        }
-    }
-    
-    function viewReceipt(transactionId) {
-        window.open(`/transactions/${transactionId}/receipt`, '_blank');
-    }
-    
-    function processQuickPayment() {
-        const visitId = document.getElementById('visitSelect').value;
-        if (!visitId) {
-            showNotification('Pilih kunjungan terlebih dahulu', 'warning');
-            return;
-        }
-        // Process quick payment logic here
-        showNotification('Pembayaran berhasil diproses', 'success');
-        setTimeout(() => location.reload(), 1500);
-    }
-    
-    function showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-        notification.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
-        notification.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        document.body.appendChild(notification);
-        setTimeout(() => notification.remove(), 3000);
-    }
-    
-    // Payment chart
-    const ctx = document.getElementById('paymentMethodChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'doughnut',
+        
+        // Auto refresh pending payments every 30 seconds
+        setInterval(() => {
+            fetch('{{ route("transactions.index") }}?status=menunggu&partial=1')
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const pendingPayments = doc.querySelector('.pending-payments-list');
+                    if (pendingPayments) {
+                        document.querySelector('.card-body.p-0').innerHTML = pendingPayments.innerHTML;
+                    }
+                })
+                .catch(error => console.error('Error refreshing pending payments:', error));
+        }, 30000);
+    });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    /* =========================
+       YEARLY TRANSACTION CHART
+    ========================== */
+    new Chart(document.getElementById('yearlyTransactionChart'), {
+        type: 'bar',
         data: {
-            labels: ['Tunai', 'Transfer', 'QRIS', 'E-Wallet'],
+            labels: @json($yearlyStats['years']),
             datasets: [{
-                data: [
-                    {{ $stats['cashAmount'] ?? 0 }},
-                    {{ $stats['transferAmount'] ?? 0 }},
-                    {{ $stats['qrisAmount'] ?? 0 }},
-                    {{ $stats['ewalletAmount'] ?? 0 }}
-                ],
-                backgroundColor: ['#6366f1', '#10b981', '#3b82f6', '#fbbf24'],
-                borderWidth: 0,
-                borderRadius: 4,
-                spacing: 2
+                label: 'Pendapatan (Rp)',
+                data: @json($yearlyStats['totals']),
+                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                borderRadius: 6
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 15,
-                        usePointStyle: true,
-                        font: { size: 12 }
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        callback: value => 'Rp ' + value.toLocaleString('id-ID')
                     }
                 }
-            },
-            cutout: '70%'
+            }
         }
     });
+
+    /* =========================
+       DAILY TRANSACTION CHART
+    ========================== */
+    new Chart(document.getElementById('dailyTransactionChart'), {
+        type: 'line',
+        data: {
+            labels: @json($dailyStats['dates']),
+            datasets: [{
+                label: 'Pendapatan Harian',
+                data: @json($dailyStats['totals']),
+                borderColor: 'rgba(16, 185, 129, 1)',
+                backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        callback: value => 'Rp ' + value.toLocaleString('id-ID')
+                    }
+                }
+            }
+        }
+    });
+
+});
 </script>
+
 @endsection

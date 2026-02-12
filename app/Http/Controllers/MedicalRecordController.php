@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\MedicalRecord;
+use App\Models\User;
 use App\Models\Visit;
 use App\Models\Medicine;
 use App\Models\Prescription;
 use Illuminate\Http\Request;
+use App\Models\MedicalRecord;
+use Illuminate\Support\Facades\DB;
 
 class MedicalRecordController extends Controller
 {
@@ -152,33 +154,78 @@ class MedicalRecordController extends Controller
     
     public function index(Request $request)
     {
-        $query = MedicalRecord::with(['visit.patient', 'visit.doctor']);
+        $query = MedicalRecord::with(['visit.patient', 'visit.doctor'])
+            ->orderBy('created_at', 'desc');
         
-        // Filter by doctor if user is a doctor
-        if (auth()->user()->role == 'dokter') {
-            $query->whereHas('visit', function($q) {
-                $q->where('doctor_id', auth()->id());
+        // Search
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->whereHas('visit.patient', function($q) use ($search) {
+                $q->where('nama', 'like', '%' . $search . '%')
+                  ->orWhere('no_rekam_medis', 'like', '%' . $search . '%');
+            });
+        }
+        
+        // Filter by doctor
+        if ($request->has('doctor_id')) {
+            $query->whereHas('visit', function($q) use ($request) {
+                $q->where('doctor_id', $request->doctor_id);
             });
         }
         
         // Filter by date
-        if ($request->has('start_date')) {
-            $query->whereDate('created_at', '>=', $request->start_date);
+        if ($request->has('date')) {
+            $query->whereDate('created_at', $request->date);
         }
         
-        if ($request->has('end_date')) {
-            $query->whereDate('created_at', '<=', $request->end_date);
-        }
+        $medicalRecords = $query->paginate(15);
         
-        // Filter by patient name
-        if ($request->has('search')) {
-            $query->whereHas('visit.patient', function($q) use ($request) {
-                $q->where('nama', 'like', '%' . $request->search . '%');
-            });
-        }
+        // Statistics
+        $totalRecords = MedicalRecord::count();
+        $todayRecords = MedicalRecord::whereDate('created_at', today())->count();
+        $weekRecords = MedicalRecord::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count();
+        $activeDoctors = User::where('role', 'dokter')->count();
         
-        $medicalRecords = $query->orderBy('created_at', 'desc')->paginate(15);
+        // Recent records for quick access
+        $recentRecords = MedicalRecord::with(['visit.patient'])
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
         
-        return view('medical_records.index', compact('medicalRecords'));
+        // Top diagnoses
+        $topDiagnoses = MedicalRecord::select('diagnosa', DB::raw('count(*) as total'))
+            ->groupBy('diagnosa')
+            ->orderBy('total', 'desc')
+            ->limit(5)
+            ->get();
+        
+        // Records by doctor
+        $recordsByDoctor = User::where('role', 'dokter')
+            ->withCount(['visits' => function($query) {
+                $query->has('medicalRecord');
+            }])
+            ->orderBy('visits_count', 'desc')
+            ->limit(5)
+            ->get();
+        
+        // Average records per day (last 30 days)
+        $avgRecordsPerDay = MedicalRecord::where('created_at', '>=', now()->subDays(30))
+            ->select(DB::raw('COUNT(*) / 30 as average'))
+            ->value('average') ?? 0;
+        
+        $doctors = User::where('role', 'dokter')->orderBy('name')->get();
+        
+        return view('medical_records.index', compact(
+            'medicalRecords',
+            'totalRecords',
+            'todayRecords',
+            'weekRecords',
+            'activeDoctors',
+            'recentRecords',
+            'topDiagnoses',
+            'recordsByDoctor',
+            'avgRecordsPerDay',
+            'doctors'
+        ));
     }
 }

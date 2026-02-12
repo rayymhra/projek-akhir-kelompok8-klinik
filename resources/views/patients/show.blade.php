@@ -85,9 +85,9 @@
                         <a href="{{ route('visits.create', ['patient_id' => $patient->id]) }}" class="btn btn-primary">
                             <i class="fas fa-calendar-plus me-2"></i>Kunjungan Baru
                         </a>
-                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#quickActionsModal">
+                        {{-- <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#quickActionsModal">
                             <i class="fas fa-bolt me-2"></i>Aksi Cepat
-                        </button>
+                        </button> --}}
                     </div>
                 </div>
             </div>
@@ -277,17 +277,9 @@
                                             </a>
                                         @endif
                                         
-                                        @if($visit->status == 'selesai' && !$visit->transaction)
-                                            <a href="{{ route('transactions.create', ['visit' => $visit->id]) }}" 
-                                               class="btn btn-primary" title="Buat Transaksi">
-                                                <i class="fas fa-cash-register"></i>
-                                            </a>
-                                        @endif
                                         
-                                        <a href="#" class="btn btn-secondary" title="Detail" 
-                                           onclick="showVisitDetail({{ $visit->id }})">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
+                                        
+                                        
                                     </div>
                                 </td>
                             </tr>
@@ -384,7 +376,8 @@
                     @endforeach
                 </div>
                 
-                @if($visits->where('medicalRecord')->count() == 0)
+                @if($visits->filter(fn($visit) => $visit->medicalRecord)->count() == 0)
+
                 <div class="text-center py-4">
                     <i class="fas fa-file-medical-alt fa-3x text-muted mb-3"></i>
                     <h6 class="text-muted">Belum ada riwayat medis</h6>
@@ -457,7 +450,7 @@
 @endif
 
 <!-- Quick Actions Modal -->
-<div class="modal fade" id="quickActionsModal" tabindex="-1">
+{{-- <div class="modal fade" id="quickActionsModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -509,7 +502,7 @@
             </div>
         </div>
     </div>
-</div>
+</div> --}}
 
 <!-- Visit Detail Modal -->
 <div class="modal fade" id="visitDetailModal" tabindex="-1">
