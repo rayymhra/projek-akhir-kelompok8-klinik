@@ -214,9 +214,9 @@
       class="d-inline"
       onsubmit="return confirm('Konfirmasi pembayaran transaksi ini?')">
     @csrf
-    <button class="btn btn-success" title="Konfirmasi Pembayaran">
+    {{-- <button class="btn btn-success" title="Konfirmasi Pembayaran">
         <i class="fas fa-check"></i> Lunas
-    </button>
+    </button> --}}
 </form>
 @endif
 
