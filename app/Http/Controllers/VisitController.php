@@ -82,6 +82,9 @@ if ($request->filled('search')) {
 
     public function store(Request $request)
 {
+    if (auth()->user()->role != 'petugas') {
+        abort(403, 'Unauthorized');
+    }
     $validated = $request->validate([
         'patient_id' => 'required|exists:patients,id',
         'doctor_id' => 'required|exists:users,id',
@@ -121,39 +124,55 @@ if ($request->filled('search')) {
     $validated['poli'] = $request->poli ?? 'Umum';
     
     $visit = Visit::create($validated);
+
+    if (auth()->user()->role != 'petugas') {
+        abort(403, 'Unauthorized');
+    }
     
     return redirect()->route('visits.index')
         ->with('success', 'Kunjungan berhasil didaftarkan. Nomor Antrian: ' . $visit->nomor_antrian_full);
 }
 
     public function updateStatus(Request $request, Visit $visit)
-    {
-        // Validate the status
-        $request->validate([
-            'status' => 'required|in:menunggu,diperiksa,selesai'
-        ]);
-        
-        // Update the status
-        $visit->update([
-            'status' => $request->status,
-            'status_updated_at' => now() // optional: add this to your migration
-        ]);
-        
-        // If status changed to 'selesai' and user is a doctor, redirect to medical record
-        if ($request->status == 'selesai' && auth()->user()->role == 'dokter') {
-            return redirect()->route('medical-records.create', $visit)
-                ->with('success', 'Status kunjungan diubah ke selesai. Silakan input pemeriksaan.');
-        }
-        
-        // For other status changes, show success message
-        $statusMessages = [
-            'menunggu' => 'Kunjungan ditandai sebagai menunggu.',
-            'diperiksa' => 'Kunjungan ditandai sebagai sedang diperiksa.',
-            'selesai' => 'Kunjungan ditandai sebagai selesai.'
-        ];
-        
-        return back()->with('success', $statusMessages[$request->status]);
+{
+    $request->validate([
+        'status' => 'required|in:menunggu,diperiksa,selesai'
+    ]);
+
+    // Role validation
+    if (!in_array(auth()->user()->role, ['petugas', 'dokter'])) {
+        abort(403, 'Unauthorized');
     }
+
+    // Kalau sudah selesai → tidak boleh diubah lagi
+    if ($visit->status == 'selesai') {
+        return back()->with('error', 'Status yang sudah selesai tidak dapat diubah.');
+    }
+
+    // Aturan transisi status
+    $allowedTransitions = [
+        'menunggu' => ['diperiksa'],
+        'diperiksa' => ['selesai'],
+    ];
+
+    if (!in_array($request->status, $allowedTransitions[$visit->status] ?? [])) {
+        return back()->with('error', 'Perubahan status tidak valid.');
+    }
+
+    $visit->update([
+        'status' => $request->status,
+        'status_updated_at' => now()
+    ]);
+
+    // Kalau dokter menyelesaikan → arahkan ke rekam medis
+    if ($request->status == 'selesai' && auth()->user()->role == 'dokter') {
+        return redirect()->route('medical-records.create', $visit)
+            ->with('success', 'Silakan input rekam medis.');
+    }
+
+    return back()->with('success', 'Status berhasil diperbarui.');
+}
+
 
     public function antrian()
     {

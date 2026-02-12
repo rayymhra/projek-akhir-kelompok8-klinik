@@ -185,7 +185,7 @@
                                             <div class="row">
                                                 <div class="col-md-5 mb-2">
                                                     <label class="form-label">Obat</label>
-                                                    <select class="form-select medicine-select" name="medicines[0][medicine_id]" required>
+                                                    <select class="form-select medicine-select" name="medicines[0][medicine_id]">
                                                         <option value="">Pilih Obat...</option>
                                                         @foreach($medicines as $medicine)
                                                             <option value="{{ $medicine->id }}" 
@@ -199,13 +199,13 @@
                                                 <div class="col-md-2 mb-2">
                                                     <label class="form-label">Jumlah</label>
                                                     <input type="number" class="form-control quantity-input" 
-                                                           name="medicines[0][jumlah]" min="1" value="1" required>
+                                                           name="medicines[0][jumlah]" min="1" value="1">
                                                 </div>
                                                 <div class="col-md-4 mb-2">
                                                     <label class="form-label">Aturan Pakai</label>
                                                     <input type="text" class="form-control" 
                                                            name="medicines[0][aturan_pakai]" 
-                                                           placeholder="Contoh: 3x1 sehari setelah makan" required>
+                                                           placeholder="Contoh: 3x1 sehari setelah makan">
                                                 </div>
                                                 <div class="col-md-1 mb-2 d-flex align-items-end">
                                                     <button type="button" class="btn btn-danger btn-sm remove-prescription" 
@@ -322,7 +322,7 @@
             <div class="row">
                 <div class="col-md-5 mb-2">
                     <label class="form-label">Obat</label>
-                    <select class="form-select medicine-select" name="medicines[${prescriptionCounter}][medicine_id]" required>
+                    <select class="form-select medicine-select" name="medicines[${prescriptionCounter}][medicine_id]">
                         <option value="">Pilih Obat...</option>
                         @foreach($medicines as $medicine)
                             <option value="{{ $medicine->id }}" 
@@ -336,13 +336,13 @@
                 <div class="col-md-2 mb-2">
                     <label class="form-label">Jumlah</label>
                     <input type="number" class="form-control quantity-input" 
-                           name="medicines[${prescriptionCounter}][jumlah]" min="1" value="1" required>
+                           name="medicines[${prescriptionCounter}][jumlah]" min="1" value="1">
                 </div>
                 <div class="col-md-4 mb-2">
                     <label class="form-label">Aturan Pakai</label>
                     <input type="text" class="form-control" 
                            name="medicines[${prescriptionCounter}][aturan_pakai]" 
-                           placeholder="Contoh: 3x1 sehari setelah makan" required>
+                           placeholder="Contoh: 3x1 sehari setelah makan">
                 </div>
                 <div class="col-md-1 mb-2 d-flex align-items-end">
                     <button type="button" class="btn btn-danger btn-sm remove-prescription" 

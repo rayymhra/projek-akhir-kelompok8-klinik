@@ -16,38 +16,6 @@
         </div>
     </div>
     
-    <!-- Filter -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-body">
-            <form method="GET" action="{{ route('transactions.step1') }}">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <input type="text" name="search" class="form-control" 
-                               placeholder="Cari nama pasien atau No. RM..." 
-                               value="{{ request('search') }}">
-                    </div>
-                    <div class="col-md-3">
-                        <select name="doctor_id" class="form-select">
-                            <option value="">Semua Dokter</option>
-                            @foreach($doctors as $doctor)
-                                <option value="{{ $doctor->id }}" {{ request('doctor_id') == $doctor->id ? 'selected' : '' }}>
-                                    {{ $doctor->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <input type="date" name="date" class="form-control" value="{{ request('date') }}">
-                    </div>
-                    <div class="col-md-2">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="fas fa-search"></i> Filter
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
     
     <!-- Info Box -->
     <div class="alert alert-info mb-4">
@@ -145,9 +113,9 @@
                     </div>
                     <h4 class="text-muted">Tidak ada kunjungan tersedia</h4>
                     <p class="text-muted">Semua kunjungan sudah memiliki transaksi atau belum selesai.</p>
-                    <a href="{{ route('visits.index') }}" class="btn btn-outline-primary">
+                    {{-- <a href="{{ route('visits.index') }}" class="btn btn-outline-primary">
                         <i class="fas fa-external-link-alt me-2"></i> Lihat Semua Kunjungan
-                    </a>
+                    </a> --}}
                 </div>
             @endif
         </div>

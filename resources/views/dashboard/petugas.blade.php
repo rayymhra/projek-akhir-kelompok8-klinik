@@ -172,18 +172,18 @@
                                                     @csrf
                                                     @method('PATCH')
                                                     <input type="hidden" name="status" value="diperiksa">
-                                                    <button type="submit" class="dropdown-item">
+                                                    {{-- <button type="submit" class="dropdown-item">
                                                         <i class="fas fa-play me-2"></i>Mulai Pemeriksaan
-                                                    </button>
+                                                    </button> --}}
                                                 </form>
                                             </li>
-                                            <li><hr class="dropdown-divider"></li>
+                                            {{-- <li><hr class="dropdown-divider"></li>
                                             <li>
                                                 <a class="dropdown-item text-danger" href="#" 
                                                    onclick="cancelQueue({{ $queue['id'] }})">
                                                     <i class="fas fa-times me-2"></i>Batalkan
                                                 </a>
-                                            </li>
+                                            </li> --}}
                                         </ul>
                                     </div>
                                 </div>
@@ -324,7 +324,7 @@
                                 <th>Waktu</th>
                                 <th>Pasien</th>
                                 <th>Status</th>
-                                <th>Aksi</th>
+                                {{-- <th>Aksi</th> --}}
                             </tr>
                         </thead>
                         <tbody>
@@ -337,7 +337,7 @@
                                         {{ ucfirst($visit->status) }}
                                     </span>
                                 </td>
-                                <td>
+                                {{-- <td>
                                     <div class="btn-group btn-group-sm">
                                         @if($visit->status == 'selesai' && !$visit->transaction)
                                         <a href="{{ route('transactions.create', ['visit' => $visit->id]) }}" 
@@ -349,7 +349,7 @@
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     </div>
-                                </td>
+                                </td> --}}
                             </tr>
                             @empty
                             <tr>
@@ -781,9 +781,7 @@
                                             <input type="hidden" name="_token" value="{{ csrf_token() }}">
                                             <input type="hidden" name="_method" value="PATCH">
                                             <input type="hidden" name="status" value="diperiksa">
-                                            <button type="submit" class="dropdown-item">
-                                                <i class="fas fa-play me-2"></i>Mulai Pemeriksaan
-                                            </button>
+                                            
                                         </form>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>

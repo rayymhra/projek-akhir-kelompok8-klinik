@@ -18,7 +18,7 @@ class TransactionController extends Controller
     {
         $query = Transaction::with(['visit.patient', 'visit.doctor', 'details']);
 
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 

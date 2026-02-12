@@ -78,7 +78,7 @@
     }
     
     /* Action buttons styling */
-     /* Main action group container */
+    /* Main action group container */
     .action-group {
         display: flex;
         align-items: center;
@@ -538,10 +538,10 @@
                     </div>
                 </div>
             </div>
-
+            
             <!-- Current Patient Card -->
             @php
-                $currentPatient = $visits->where('status', 'diperiksa')->first();
+            $currentPatient = $visits->where('status', 'diperiksa')->first();
             @endphp
             @if($currentPatient)
             <div class="card current-patient-card mb-4 border-0">
@@ -579,190 +579,137 @@
                         </div>
                         <div class="col-auto">
                             <a href="{{ route('medical-records.create', $currentPatient) }}" 
-                               class="btn btn-primary btn-lg px-4">
-                                <i class="fas fa-stethoscope me-2"></i> Input Pemeriksaan
-                            </a>
-                        </div>
+                            class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-stethoscope me-2"></i> Input Pemeriksaan
+                        </a>
                     </div>
                 </div>
             </div>
-            @endif
-
-            <!-- Queue Table -->
-            <div class="card">
-                <div class="card-header doctor-queue-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="card-title mb-0 fw-semibold">
-                                <i class="fas fa-user-md me-2"></i> Antrian Konsultasi
-                            </h5>
-                            <small class="opacity-75">Dokter: {{ auth()->user()->name }}</small>
-                        </div>
-                        <div class="d-flex align-items-center gap-3">
-                            <span class="badge bg-white text-dark px-3 py-2">
-                                <i class="fas fa-clock me-1"></i>
-                                <span id="liveClock">00:00:00</span>
-                            </span>
-                        </div>
+        </div>
+        @endif
+        
+        <!-- Queue Table -->
+        <div class="card">
+            <div class="card-header doctor-queue-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0 fw-semibold">
+                            <i class="fas fa-user-md me-2"></i> Antrian Konsultasi
+                        </h5>
+                        <small class="opacity-75">Dokter: {{ auth()->user()->name }}</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="badge bg-white text-dark px-3 py-2">
+                            <i class="fas fa-clock me-1"></i>
+                            <span id="liveClock">00:00:00</span>
+                        </span>
                     </div>
                 </div>
-                <div class="card-body">
-                    @if($visits->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th width="100">Antrian</th>
-                                    <th>Pasien</th>
-                                    <th>Poli</th>
-                                    <th>Waktu</th>
-                                    <th>Status</th>
-                                    <th width="140" class="text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($visits as $visit)
-                                <tr>
-                                    <td>
-                                        <div class="d-flex flex-column align-items-start">
-                                            <span class="queue-number {{ ($visit->prioritas ?? 'normal') == 'prioritas' ? 'priority-queue' : 'bg-primary' }} mb-1">
-                                                {{ $visit->nomor_antrian_full ?? 'A-' . str_pad($loop->iteration, 3, '0', STR_PAD_LEFT) }}
-                                            </span>
-                                            @if(($visit->prioritas ?? 'normal') == 'prioritas')
-                                            <small class="text-danger fw-semibold">
-                                                <i class="fas fa-exclamation-circle me-1"></i>Prioritas
+            </div>
+            <div class="card-body">
+                @if($visits->count() > 0)
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th width="100">Antrian</th>
+                                <th>Pasien</th>
+                                <th>Poli</th>
+                                <th>Waktu</th>
+                                <th>Status</th>
+                                <th width="140" class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($visits as $visit)
+                            <tr>
+                                <td>
+                                    <div class="d-flex flex-column align-items-start">
+                                        <span class="queue-number {{ ($visit->prioritas ?? 'normal') == 'prioritas' ? 'priority-queue' : 'bg-primary' }} mb-1">
+                                            {{ $visit->nomor_antrian_full ?? 'A-' . str_pad($loop->iteration, 3, '0', STR_PAD_LEFT) }}
+                                        </span>
+                                        @if(($visit->prioritas ?? 'normal') == 'prioritas')
+                                        <small class="text-danger fw-semibold">
+                                            <i class="fas fa-exclamation-circle me-1"></i>Prioritas
+                                        </small>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <strong class="mb-1">{{ $visit->patient->nama }}</strong>
+                                        <div class="d-flex gap-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-id-card me-1"></i>{{ $visit->patient->no_rekam_medis }}
                                             </small>
-                                            @endif
+                                            <small class="text-muted">
+                                                <i class="fas fa-birthday-cake me-1"></i>{{ $visit->patient->umur }} thn
+                                            </small>
                                         </div>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex flex-column">
-                                            <strong class="mb-1">{{ $visit->patient->nama }}</strong>
-                                            <div class="d-flex gap-2">
-                                                <small class="text-muted">
-                                                    <i class="fas fa-id-card me-1"></i>{{ $visit->patient->no_rekam_medis }}
-                                                </small>
-                                                <small class="text-muted">
-                                                    <i class="fas fa-birthday-cake me-1"></i>{{ $visit->patient->umur }} thn
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-light text-dark">
-                                            {{ $visit->poli ?? 'Umum' }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="text-muted">
-                                            <i class="far fa-clock me-1"></i>
-                                            {{ $visit->created_at->format('H:i') }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="status-badge badge-status-{{ $visit->status }}">
-                                            <i class="fas fa-circle fa-xs"></i>
-                                            {{ ucfirst($visit->status) }}
-                                        </span>
-                                    </td>
-                                    <td>
-    <div class="action-group">
-        <!-- Detail Patient Button -->
-        <a href="{{ route('patients.show', $visit->patient) }}" 
-           class="action-btn action-btn-icon" 
-           data-tooltip="Detail Pasien">
-            <i class="fas fa-user text-primary"></i>
-        </a>
-        
-        @if($visit->status == 'menunggu')
-        <!-- Start Examination Button -->
-        <form action="{{ route('visits.updateStatus', $visit) }}" method="POST" class="d-inline">
-            @csrf @method('PATCH')
-            <input type="hidden" name="status" value="diperiksa">
-            <button type="submit" 
-                    class="quick-pill quick-pill-examining"
-                    data-tooltip="Mulai Pemeriksaan">
-                <i class="fas fa-play"></i>
-                <span>Mulai</span>
-            </button>
-        </form>
-        @endif
-        
-        @if($visit->status == 'diperiksa')
-        <!-- Complete Examination Button -->
-        <form action="{{ route('visits.updateStatus', $visit) }}" method="POST" class="d-inline">
-            @csrf @method('PATCH')
-            <input type="hidden" name="status" value="selesai">
-            <button type="submit" 
-                    class="quick-pill quick-pill-completed"
-                    data-tooltip="Selesaikan Pemeriksaan">
-                <i class="fas fa-check-circle"></i>
-                <span>Selesai</span>
-            </button>
-        </form>
-        @endif
-        
-        <!-- More Actions Dropdown -->
-        <div class="dropdown d-inline-block">
-            <button class="action-btn action-btn-icon action-dropdown" 
-                    type="button" 
-                    data-bs-toggle="dropdown"
-                    data-tooltip="Aksi Lainnya">
-                <i class="fas fa-ellipsis-v"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 py-2">
-                <li>
-                    <h6 class="dropdown-header fw-semibold text-muted px-3">
-                        <i class="fas fa-bolt me-2"></i>Quick Actions
-                    </h6>
-                </li>
-                <li>
-                    <a class="dropdown-item py-2 px-3" href="#">
-                        <i class="fas fa-prescription-bottle text-warning me-3"></i>
-                        Resep
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item py-2 px-3" href="#">
-                        <i class="fas fa-flask text-info me-3"></i>
-                        Laboratorium
-                    </a>
-                </li>
-                <li>
-                    <hr class="dropdown-divider">
-                </li>
-                <li>
-                    <a class="dropdown-item py-2 px-3" href="{{ route('patients.show', $visit->patient) }}">
-                        <i class="fas fa-user-circle text-primary me-3"></i>
-                        Profil Pasien
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item py-2 px-3" href="#">
-                        <i class="fas fa-history text-secondary me-3"></i>
-                        Riwayat Kunjungan
-                    </a>
-                </li>
-            </ul>
-        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">
+                                        {{ $visit->poli ?? 'Umum' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="text-muted">
+                                        <i class="far fa-clock me-1"></i>
+                                        {{ $visit->created_at->format('H:i') }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status-badge badge-status-{{ $visit->status }}">
+                                        <i class="fas fa-circle fa-xs"></i>
+                                        {{ ucfirst($visit->status) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-group">
+                                        <!-- Detail Patient Button -->
+                                        <a href="{{ route('patients.show', $visit->patient) }}" 
+                                            class="action-btn action-btn-icon" 
+                                            data-tooltip="Detail Pasien">
+                                            <i class="fas fa-user text-primary"></i>
+                                        </a>
+                                        
+                                        @if($visit->status == 'menunggu')
+                                        <!-- Start Examination Button -->
+                                        <form action="{{ route('visits.updateStatus', $visit) }}" method="POST" class="d-inline">
+                                            @csrf @method('PATCH')
+                                            <input type="hidden" name="status" value="diperiksa">
+                                            <button type="submit" 
+                                            class="quick-pill quick-pill-examining"
+                                            data-tooltip="Mulai Pemeriksaan">
+                                            <i class="fas fa-play"></i>
+                                            <span>Mulai</span>
+                                        </button>
+                                    </form>
+                                    @endif
+                                    
+                                    
+                                
+                               
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
     </div>
-</td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    @else
-                    <div class="empty-state">
-                        <i class="fas fa-users-slash"></i>
-                        <h5 class="mt-3 mb-2">Tidak ada pasien dalam antrian</h5>
-                        <p class="text-muted">Tidak ada pasien yang terdaftar untuk konsultasi hari ini.</p>
-                    </div>
-                    @endif
-                </div>
-            </div>
-        </div>
+    @else
+    <div class="empty-state">
+        <i class="fas fa-users-slash"></i>
+        <h5 class="mt-3 mb-2">Tidak ada pasien dalam antrian</h5>
+        <p class="text-muted">Tidak ada pasien yang terdaftar untuk konsultasi hari ini.</p>
     </div>
+    @endif
+</div>
+</div>
+</div>
+</div>
 </div>
 
 @else
@@ -777,11 +724,15 @@
                 <h1 class="page-title mb-1">Manajemen Kunjungan</h1>
                 <p class="page-subtitle">Kelola semua kunjungan pasien di klinik</p>
             </div>
+            @if(auth()->user()->role == 'petugas')
+
             <a href="{{ route('visits.create') }}" class="btn btn-primary px-4">
                 <i class="fas fa-plus-circle me-2"></i>Kunjungan Baru
             </a>
+            @endif
+            
         </div>
-
+        
         <!-- Stats Cards -->
         <div class="row mb-4">
             <div class="col-md-3">
@@ -849,7 +800,7 @@
                 </div>
             </div>
         </div>
-
+        
         <!-- Filter Card -->
         <div class="card filter-card mb-4">
             <div class="card-body p-3">
@@ -866,16 +817,16 @@
                     <div class="col-md-2">
                         <label class="form-label small text-muted mb-1">Tanggal</label>
                         <input type="date" class="form-control form-control-sm" name="tanggal" 
-                               value="{{ request('tanggal') }}" onchange="this.form.submit()">
+                        value="{{ request('tanggal') }}" onchange="this.form.submit()">
                     </div>
                     <div class="col-md-2">
                         <label class="form-label small text-muted mb-1">Dokter</label>
                         <select name="doctor_id" class="form-select form-select-sm" onchange="this.form.submit()">
                             <option value="">Semua Dokter</option>
                             @foreach($doctors as $doctor)
-                                <option value="{{ $doctor->id }}" {{ request('doctor_id') == $doctor->id ? 'selected' : '' }}>
-                                    {{ $doctor->name }}
-                                </option>
+                            <option value="{{ $doctor->id }}" {{ request('doctor_id') == $doctor->id ? 'selected' : '' }}>
+                                {{ $doctor->name }}
+                            </option>
                             @endforeach
                         </select>
                     </div>
@@ -883,7 +834,7 @@
                         <label class="form-label small text-muted mb-1">Cari Pasien</label>
                         <div class="input-group input-group-sm">
                             <input type="text" class="form-control" name="search" 
-                                   placeholder="Nama atau no. RM..." value="{{ request('search') }}">
+                            placeholder="Nama atau no. RM..." value="{{ request('search') }}">
                             <button class="btn btn-outline-secondary" type="submit">
                                 <i class="fas fa-search"></i>
                             </button>
@@ -902,7 +853,7 @@
                 </form>
             </div>
         </div>
-
+        
         <!-- Main Table Card -->
         <div class="card">
             <div class="card-header">
@@ -966,132 +917,39 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <div class="action-btn-group justify-content-center">
-                                        <!-- Quick Status Buttons -->
-                                        @if($visit->status != 'menunggu')
-                                        <form action="{{ route('visits.updateStatus', $visit) }}" 
-                                              method="POST" class="d-inline">
-                                            @csrf @method('PATCH')
-                                            <input type="hidden" name="status" value="menunggu">
-                                            <button type="submit" class="btn btn-sm btn-warning quick-status-btn"
-                                                    data-bs-toggle="tooltip" title="Set ke Menunggu">
-                                                <i class="fas fa-clock"></i>
-                                            </button>
-                                        </form>
-                                        @endif
-                                        
-                                        @if($visit->status != 'diperiksa')
-                                        <form action="{{ route('visits.updateStatus', $visit) }}" 
-                                              method="POST" class="d-inline">
-                                            @csrf @method('PATCH')
-                                            <input type="hidden" name="status" value="diperiksa">
-                                            <button type="submit" class="btn btn-sm btn-info quick-status-btn"
-                                                    data-bs-toggle="tooltip" title="Set ke Diperiksa">
-                                                <i class="fas fa-user-md"></i>
-                                            </button>
-                                        </form>
-                                        @endif
-                                        
-                                        @if($visit->status != 'selesai')
-                                        <form action="{{ route('visits.updateStatus', $visit) }}" 
-                                              method="POST" class="d-inline">
-                                            @csrf @method('PATCH')
-                                            <input type="hidden" name="status" value="selesai">
-                                            <button type="submit" class="btn btn-sm btn-success quick-status-btn"
-                                                    data-bs-toggle="tooltip" title="Set ke Selesai">
-                                                <i class="fas fa-check-circle"></i>
-                                            </button>
-                                        </form>
-                                        @endif
-                                        
-                                        <!-- Dropdown Menu -->
-                                        <div class="dropdown d-inline-block">
-                                            <button class="btn btn-sm btn-light dropdown-toggle" type="button" 
-                                                    data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="fas fa-ellipsis-v"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end shadow">
-                                                <li>
-                                                    <a class="dropdown-item" href="{{ route('patients.show', $visit->patient) }}">
-                                                        <i class="fas fa-user text-info me-2"></i>Detail Pasien
-                                                    </a>
-                                                </li>
-                                                @if($visit->status == 'selesai' && !$visit->transaction)
-                                                {{-- <li>
-                                                    <a class="dropdown-item" href="{{ route('transactions.create', ['visit' => $visit->id]) }}">
-                                                        <i class="fas fa-cash-register text-secondary me-2"></i>Buat Transaksi
-                                                    </a>
-                                                </li> --}}
-                                                @endif
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li>
-                                                    <h6 class="dropdown-header">Ubah Status</h6>
-                                                </li>
-                                                @if($visit->status != 'menunggu')
-                                                <li>
-                                                    <form action="{{ route('visits.updateStatus', $visit) }}" method="POST">
-                                                        @csrf @method('PATCH')
-                                                        <input type="hidden" name="status" value="menunggu">
-                                                        <button type="submit" class="dropdown-item">
-                                                            <i class="fas fa-clock text-warning me-2"></i>Menunggu
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                                @endif
-                                                @if($visit->status != 'diperiksa')
-                                                <li>
-                                                    <form action="{{ route('visits.updateStatus', $visit) }}" method="POST">
-                                                        @csrf @method('PATCH')
-                                                        <input type="hidden" name="status" value="diperiksa">
-                                                        <button type="submit" class="dropdown-item">
-                                                            <i class="fas fa-user-md text-info me-2"></i>Diperiksa
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                                @endif
-                                                @if($visit->status != 'selesai')
-                                                <li>
-                                                    <form action="{{ route('visits.updateStatus', $visit) }}" method="POST">
-                                                        @csrf @method('PATCH')
-                                                        <input type="hidden" name="status" value="selesai">
-                                                        <button type="submit" class="dropdown-item">
-                                                            <i class="fas fa-check-circle text-success me-2"></i>Selesai
-                                                        </button>
-                                                    </form>
-                                                </li>
-                                                @endif
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                @else
-                <div class="empty-state">
-                    <i class="fas fa-calendar-times"></i>
-                    <h5 class="mt-3 mb-2">Tidak ada data kunjungan</h5>
-                    <p class="text-muted mb-4">Tidak ditemukan kunjungan yang sesuai dengan filter yang dipilih.</p>
-                    <a href="{{ route('visits.create') }}" class="btn btn-primary">
-                        <i class="fas fa-plus-circle me-2"></i>Tambah Kunjungan
-                    </a>
-                </div>
-                @endif
+                                    
+                                <a class="dropdown-item" href="{{ route('patients.show', $visit->patient) }}">
+                                                    <i class="fas fa-user text-info me-2"></i>Detail Pasien
+                                                </a>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
-            @if($visits->count() > 0)
-            <div class="card-footer">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="text-muted small">
-                        Menampilkan {{ $visits->firstItem() ?? 0 }}-{{ $visits->lastItem() ?? 0 }} dari {{ $visits->total() }} kunjungan
-                    </div>
-                    {{ $visits->links() }}
-                </div>
+            @else
+            <div class="empty-state">
+                <i class="fas fa-calendar-times"></i>
+                <h5 class="mt-3 mb-2">Tidak ada data kunjungan</h5>
+                <p class="text-muted mb-4">Tidak ditemukan kunjungan yang sesuai dengan filter yang dipilih.</p>
+                {{-- <a href="{{ route('visits.create') }}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-2"></i>Tambah Kunjungan
+                </a> --}}
             </div>
             @endif
         </div>
+        @if($visits->count() > 0)
+        <div class="card-footer">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted small">
+                    Menampilkan {{ $visits->firstItem() ?? 0 }}-{{ $visits->lastItem() ?? 0 }} dari {{ $visits->total() }} kunjungan
+                </div>
+                {{ $visits->links() }}
+            </div>
+        </div>
+        @endif
     </div>
+</div>
 </div>
 @endif
 @endsection
